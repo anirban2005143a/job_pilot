@@ -1,0 +1,20 @@
+[2026-08-15T15:39:54.254Z] [INFO] [JOBS_FETCHED] Fetched 3 jobs
+[2026-08-15T15:39:54.718Z] [INFO] [APPLICATION_SUBMITTED] Application submitted | application_id=43b9a191-4ee1-4fbf-b1fb-fc39845a88c3 job_id=job-101 user_id=test-user-1
+[2026-08-15T15:39:54.732Z] [WARN] [APPLICATION_DUPLICATE] Duplicate application | job_id=job-101 user_id=test-user-1
+[2026-08-15T15:39:54.745Z] [WARN] [APPLICATION_FAILED] Job not found | job_id=job-does-not-exist user_id=test-user-2
+[2026-08-15T15:39:54.758Z] [INFO] [STATUS_FETCHED] Fetched 1 applications | user_id=test-user-1
+[2026-08-15T15:40:05.243Z] [INFO] [JOBS_FETCHED] Fetched 3 jobs
+[2026-08-15T15:40:05.287Z] [WARN] [APPLICATION_DUPLICATE] Duplicate application | job_id=job-101 user_id=test-user-1
+[2026-08-15T15:40:05.310Z] [WARN] [APPLICATION_DUPLICATE] Duplicate application | job_id=job-101 user_id=test-user-1
+[2026-08-15T15:40:05.319Z] [WARN] [APPLICATION_FAILED] Job not found | job_id=job-does-not-exist user_id=test-user-2
+[2026-08-15T15:40:05.331Z] [INFO] [STATUS_FETCHED] Fetched 1 applications | user_id=test-user-1
+[2026-08-15T15:40:07.878Z] [INFO] [JOBS_FETCHED] Fetched 3 jobs
+[2026-08-15T15:40:07.922Z] [WARN] [APPLICATION_DUPLICATE] Duplicate application | job_id=job-101 user_id=test-user-1
+[2026-08-15T15:40:07.944Z] [WARN] [APPLICATION_DUPLICATE] Duplicate application | job_id=job-101 user_id=test-user-1
+[2026-08-15T15:40:07.953Z] [WARN] [APPLICATION_FAILED] Job not found | job_id=job-does-not-exist user_id=test-user-2
+[2026-08-15T15:40:07.963Z] [INFO] [STATUS_FETCHED] Fetched 1 applications | user_id=test-user-1
+[2026-08-15T15:40:25.617Z] [INFO] [JOBS_FETCHED] Fetched 3 jobs
+[2026-08-15T15:40:25.661Z] [WARN] [APPLICATION_DUPLICATE] Duplicate application | job_id=job-101 user_id=test-user-1
+[2026-08-15T15:40:25.685Z] [WARN] [APPLICATION_DUPLICATE] Duplicate application | job_id=job-101 user_id=test-user-1
+[2026-08-15T15:40:25.695Z] [WARN] [APPLICATION_FAILED] Job not found | job_id=job-does-not-exist user_id=test-user-2
+[2026-08-15T15:40:25.706Z] [INFO] [STATUS_FETCHED] Fetched 1 applications | user_id=test-user-1

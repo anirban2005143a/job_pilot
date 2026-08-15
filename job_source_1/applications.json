@@ -1,0 +1,13 @@
+[
+  {
+    "application_id": "43b9a191-4ee1-4fbf-b1fb-fc39845a88c3",
+    "job_id": "job-101",
+    "user_id": "test-user-1",
+    "name": "Test User",
+    "email": "test@example.com",
+    "resume": "resume.pdf",
+    "cover_letter": "Test cover letter",
+    "status": "pending",
+    "applied_at": "2026-08-15T15:39:54.717Z"
+  }
+]

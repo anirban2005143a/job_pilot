@@ -1,0 +1,44 @@
+import {app} from "./app.js";
+import dotenv from "dotenv";
+import { MongoDatabase } from "./database/MongoDatabase.js";
+
+dotenv.config();
+
+const PORT = process.env.PORT || 5000;
+const MONGO_URI = process.env.MONGO_URI;
+
+const startServer = async () => {
+  try {
+    // Connect to MongoDB
+    const database = new MongoDatabase(MONGO_URI);
+
+    await database.connect();
+
+    console.log("MongoDB connected successfully");
+
+    // Start Express server
+    const server = app.listen(PORT, () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
+
+    // Graceful shutdown
+    const shutdown = async () => {
+      console.log("Shutting down server...");
+
+      server.close(async () => {
+        await database.disconnect();
+
+        console.log("MongoDB disconnected");
+        process.exit(0);
+      });
+    };
+
+    process.on("SIGINT", shutdown);
+    process.on("SIGTERM", shutdown);
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    process.exit(1);
+  }
+};
+
+startServer();
