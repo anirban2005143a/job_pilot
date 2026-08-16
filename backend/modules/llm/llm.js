@@ -3,6 +3,7 @@ import path from "path";
 import axios from "axios";
 import { getenv } from "../../config/env.js";
 import { preferencesToParagraph } from "../user/utils.js";
+import { testMatchJob } from "./test-match-job.js";
 class LLMModule {
   constructor(user) {
     if (!user) {
@@ -117,7 +118,9 @@ class LLMModule {
     }
 
     const userPreferences = preferencesToParagraph(this.user.preferences || {});
-    const userInstruction = `My preferences are - ${user_preferences}`;
+    const userInstruction = `My preferences are - ${userPreferences}`;
+
+    console.log("User preference :\n", userPreferences)
 
     const response = await axios.post(`${this.pythonApiBaseUrl}/match-job`, {
       user_summary: this.user.summary,
@@ -128,5 +131,7 @@ class LLMModule {
     return response.data;
   }
 }
+
+testMatchJob("6a818ad3e95b19e1b782bb7a");
 
 export { LLMModule };

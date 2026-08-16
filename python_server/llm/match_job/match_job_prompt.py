@@ -119,7 +119,7 @@ Do not give a generic reason such as:
 Mention the most important matching skills or experience and explain
 why they support the decision.
 
-Keep the reason concise: 2 to 3 sentences.
+Keep the reason concise: 5 to 6 sentences.
 
 MATCHING SKILLS
 ===============
@@ -156,7 +156,7 @@ Do not put ordinary missing skills here.
 FUTURE WORK EXPERIENCE
 ======================
 
-Write 3 to 4 concise lines describing the type of work you would
+Write 5 to 6 concise lines describing the type of work you would
 likely perform if selected.
 
 Base this only on the job and your demonstrated capabilities.
