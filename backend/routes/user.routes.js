@@ -4,8 +4,8 @@ import { uploadResume } from "../middleware/multer.js";
 import {
   addPreferenceController,
   uploadResumeController,
-} from "../user/user.controller.js";
-import { addPreferenceSchema } from "../user/user.validate.js";
+} from "../modules/user/user.controller.js";
+import { addPreferenceSchema } from "../modules/user/user.validate.js";
 import { authenticateUser } from "../middleware/auth.js";
 import { getenv } from "../config/env.js";
 

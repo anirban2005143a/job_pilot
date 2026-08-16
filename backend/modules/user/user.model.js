@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { getenv } from "../config/env.js";
+import { getenv } from "../../config/env.js";
 
 const MAX_RESUMES = Number(getenv("MAX_RESUMES") || 0);
 
