@@ -18,3 +18,8 @@
 [2026-08-15T15:40:25.685Z] [WARN] [APPLICATION_DUPLICATE] Duplicate application | job_id=job-101 user_id=test-user-1
 [2026-08-15T15:40:25.695Z] [WARN] [APPLICATION_FAILED] Job not found | job_id=job-does-not-exist user_id=test-user-2
 [2026-08-15T15:40:25.706Z] [INFO] [STATUS_FETCHED] Fetched 1 applications | user_id=test-user-1
+[2026-08-16T05:11:50.664Z] [INFO] [JOBS_FETCHED] Fetched 10 random jobs
+[2026-08-16T05:11:53.681Z] [INFO] [JOBS_FETCHED] Fetched 10 random jobs
+[2026-08-16T05:11:54.812Z] [INFO] [JOBS_FETCHED] Fetched 10 random jobs
+[2026-08-16T05:11:55.846Z] [INFO] [JOBS_FETCHED] Fetched 10 random jobs
+[2026-08-16T05:28:37.705Z] [INFO] [JOBS_FETCHED] Fetched 10 random jobs

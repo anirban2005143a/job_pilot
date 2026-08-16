@@ -2,7 +2,7 @@ import fs from "fs/promises";
 import path from "path";
 import { randomUUID } from "crypto";
 
-import { extractResumeContent } from "../../../services/resume/extractResumeContent.js";
+import {extractResumeContent} from "../../services/resume/extractResumeContent.js"
 
 export class ResumeDocument {
 
@@ -55,7 +55,7 @@ export class ResumeDocument {
         "uploads",
         "resumes",
         this.userId,
-        this.filename
+        this.markdownFilename
       )
       .replaceAll("\\", "/");
 

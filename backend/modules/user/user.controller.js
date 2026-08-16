@@ -2,7 +2,7 @@ import fs from "fs/promises";
 import path from "path";
 import { getenv } from "../../config/env.js";
 import User from "./user.model.js";
-import { ResumeDocument } from "./resume/ResumeDocument.js";
+import { ResumeDocument } from "../resume/ResumeDocument.js";
 
 const MAX_RESUMES = Number(getenv("MAX_RESUMES") || 0);
 

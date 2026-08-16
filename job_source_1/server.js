@@ -5,7 +5,7 @@ import { uuid } from "uuidv4";
 const app = express();
 app.use(express.json());
 
-const PORT = 4000;
+const PORT = 5001;
 
 const JOBS_FILE = "./jobs.json";
 const APPLICATIONS_FILE = "./applications.json";
@@ -51,10 +51,19 @@ app.get("/jobs", async (req, res) => {
   try {
     const jobs = await readJson(JOBS_FILE);
 
-    await addLog("INFO", "JOBS_FETCHED", `Fetched ${jobs.length} jobs`);
+    // Pick 10 random jobs
+    const randomJobs = jobs
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 10);
+
+    await addLog(
+      "INFO",
+      "JOBS_FETCHED",
+      `Fetched ${randomJobs.length} random jobs`
+    );
 
     res.json({
-      jobs,
+      jobs: randomJobs,
     });
   } catch (error) {
     await addLog("ERROR", "JOBS_FETCH_FAILED", "Failed to fetch jobs", {
