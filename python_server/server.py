@@ -5,7 +5,10 @@ import tempfile
 from pathlib import Path
 
 from api_models.summarize_resume import ResumeSummaryRequest, ResumeSummaryResponse
+from api_models.match_job import MatchJobRequest
 from llm.summarize.summarize_resume import summarize_resume
+from llm.match_job.match_job import match_user_to_job
+from llm.match_job.match_job_schema import JobMatchResult
 
 app = FastAPI(
     title="Resume Parser API",
@@ -98,4 +101,36 @@ def api_summarize_resume(request: ResumeSummaryRequest):
         raise HTTPException(
             status_code=500,
             detail=f"Failed to summarize resume: {str(e)}",
+        )
+        
+@app.post(
+    "/match-job",
+    response_model=JobMatchResult,
+)
+def match_job(
+    request: MatchJobRequest,
+):
+
+    try:
+
+        result = match_user_to_job(
+            user_summary=request.user_summary,
+            job=request.job,
+            user_instruction=request.user_instruction,
+        )
+
+        return result
+
+    except ValueError as e:
+
+        raise HTTPException(
+            status_code=400,
+            detail=str(e),
+        )
+
+    except Exception as e:
+
+        raise HTTPException(
+            status_code=500,
+            detail=f"Job matching failed: {str(e)}",
         )
