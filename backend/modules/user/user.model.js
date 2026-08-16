@@ -30,6 +30,11 @@ const userSchema = new mongoose.Schema(
       },
     },
 
+    summary: {
+      type: String,
+      default: "",
+    },
+
     preferences: {
       type: [String],
       default: [],

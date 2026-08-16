@@ -1,7 +1,7 @@
-const fs = require("fs/promises");
-const path = require("path");
-const axios = require("axios");
-
+import fs from "fs/promises";
+import path from "path";
+import axios from "axios";
+import { getenv } from "../../config/env.js";
 class LLMModule {
   constructor(user) {
     if (!user) {
@@ -10,39 +10,33 @@ class LLMModule {
 
     this.user = user;
 
-    this.pythonApiBaseUrl = process.env.PYTHON_API_BASE_URL;
+    this.pythonApiBaseUrl = getenv("PYTHON_SERVER_BASE_URL");
 
     if (!this.pythonApiBaseUrl) {
       throw new Error("PYTHON_API_BASE_URL is required");
     }
   }
 
-  async summarizeResume(content, job) {
+  async getSummary(content, user_instruction) {
     const response = await axios.post(
       `${this.pythonApiBaseUrl}/summarize-resume`,
       {
         content,
-        job,
+        user_instruction: user_instruction || "",
       },
     );
-
-    return response.data;
+    return response.data?.summary || "";
   }
 
-  async matchJob(job) {
+  async summarizeAllResumes() {
     if (!this.user) {
       throw new Error("User object is required");
     }
-
-    if (!job) {
-      throw new Error("job is required");
-    }
+    const user = this.user;
 
     if (!user.resumes || user.resumes.length === 0) {
       throw new Error(`No resumes found for user: ${userId}`);
     }
-
-    const user = this.user;
 
     // Read resume markdown files from paths stored in user.resumes
     const resumeDocuments = [];
@@ -74,10 +68,7 @@ class LLMModule {
     let resumeSummary;
 
     if (resumeDocuments.length === 1) {
-      const result = await this.summarizeResume(
-        resumeDocuments[0].content,
-        job,
-      );
+      const result = await this.getSummary(resumeDocuments[0].content);
 
       resumeSummary = result;
     } else {
@@ -90,7 +81,7 @@ class LLMModule {
             ${resumeDocuments[1].content}
         `;
 
-      const result = await this.summarizeResume(firstContent, job);
+      const result = await this.getSummary(firstContent);
 
       resumeSummary = result;
 
@@ -104,23 +95,16 @@ class LLMModule {
                 ${resumeDocuments[i].content}
             `;
 
-        const result = await this.summarizeResume(content, job);
+        const result = await this.getSummary(content);
 
         resumeSummary = result;
+
+        await new Promise((resolve) => setTimeout(resolve, 1000));
       }
     }
 
-    // Final matching API call
-    const response = await axios.post(`${this.pythonApiBaseUrl}/match-job`, {
-      summary: resumeSummary,
-      job,
-      preferences: user.preferences || [],
-    });
-
-    return response.data;
+    return resumeSummary;
   }
-
-
 }
 
-module.exports = {LLMModule};
+export { LLMModule };

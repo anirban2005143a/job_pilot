@@ -3,6 +3,7 @@ import path from "path";
 import { getenv } from "../../config/env.js";
 import User from "./user.model.js";
 import { ResumeDocument } from "../resume/ResumeDocument.js";
+import { LLMModule } from "../llm/llm.js";
 
 const MAX_RESUMES = Number(getenv("MAX_RESUMES") || 0);
 
@@ -17,7 +18,7 @@ export const uploadResumeController = async (req, res) => {
 
     const userId = req.user._id;
     // Get current resume count before processing files.
-    const user = await User.findById(userId).select("resumes");
+    const user = await User.findById(userId)
     const currentResumeCount = user.resumes?.length ?? 0;
     const incomingResumeCount = req.files.length;
 
@@ -37,17 +38,56 @@ export const uploadResumeController = async (req, res) => {
       const resumeDocument = new ResumeDocument({ userId, file });
       await resumeDocument.process();
       resumeDocuments.push(resumeDocument);
+      user.resumes.push(resumeDocument.getRelativePath())
     }
 
     const resumePaths = resumeDocuments.map((resumeDocument) =>
       resumeDocument.getRelativePath(),
     );
 
+  
+    // ------------------------------------------------
+    // Generate / update resume summary
+    // ------------------------------------------------
+
+    let resumeSummary;
+    const llmModule = new LLMModule(user)
+    if (currentResumeCount === 0) {
+      // First ever resume upload
+      resumeSummary = await llmModule.summarizeAllResumes();
+    } else {
+      // Existing summary + newly uploaded resumes
+      resumeSummary = user.summary || "";
+
+      for (const resumeDocument of resumeDocuments) {
+        const content = `
+          CURRENT SUMMARY:
+          ${resumeSummary}
+
+          ADDITIONAL RESUME:
+          ${resumeDocument.content}
+        `;
+
+        resumeSummary = await llmModule.getSummary(content);
+
+        // Optional: wait 1 second between LLM calls
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+    }
+
+    // Save updated user
     await User.findByIdAndUpdate(
       userId,
       { $push: { resumes: { $each: resumePaths } } },
       { new: true, runValidators: true },
     );
+
+    await User.findByIdAndUpdate(
+      userId,
+      { $set: { summary : resumeSummary } },
+      { new: true, runValidators: true,},
+    );
+
     return res.status(200).json({
       success: true,
       message: "Resume(s) uploaded successfully",

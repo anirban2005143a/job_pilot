@@ -12,6 +12,8 @@ import { getenv } from "../config/env.js";
 export const userRoutes = express.Router();
 const MAX_RESUMES = Number(getenv("MAX_RESUMES") || 0);
 
+// console.log("from env file MAX_RESUMES ", MAX_RESUMES)
+
 userRoutes.post(
   "/upload-resume",
   authenticateUser,

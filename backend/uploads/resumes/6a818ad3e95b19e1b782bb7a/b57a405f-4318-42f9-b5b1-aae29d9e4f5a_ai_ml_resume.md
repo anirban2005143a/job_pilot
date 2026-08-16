@@ -6,25 +6,27 @@
 
 ## Education 
 
-### **Indian Institute of Technology (Indian School of Mines), Dhanbad** 
+**Indian Institute of Technology (Indian School of Mines), Dhanbad** 
 
-_Bachelor of Technology in Computer Science and Engineering (GPA: 8.29 / 10.00)_ 
+_Bachelor of Technology in Computer Science and Engineering (GPA: 8.25 / 10.00)_ 
 
 Expected May 2027 _Dhanbad, Jharkhand_ 
 
-- **Relevant Coursework:** Data Structures and Algorithms (C++), Database Management System, Compiler Design, Computer Organization , Computer Architecture, Operating Systems. 
+- **Relevant Coursework:** Data Structures and Algorithms (C++), Computer Organization , Computer Architecture, Operating Systems 
 
 ## Experience 
 
-### **Google** _|_ **_Software Engineer Intern_** 
+**Gofloww** 
 
-May 2026 – July 2026 
+_Frontend Developer Intern_ _<u>[Offer Letter]</u>_ 
 
-- Engineered a new linting rule and automated batch validation pipeline in Java and TypeScript to detect structural errors across cloud contract templates. 
+May 2025 – July 2025 _India_ 
 
-- Enhanced core template management interfaces by developing a responsive document comparison dialog box, a read/write mode selector for gDoc, and an embedded AI assistant chat widget. 
+- Built and deployed the Atom Accounting App as the primary frontend developer using React and Tailwind CSS. 
 
-- Contributed 7,350+ lines of production code across 22 peer-reviewed changelists and created analytical dashboards for contract monitoring and template health tracking. 
+- Collaborated with the backend team to integrate REST APIs, ensuring seamless user interactions and real-time data updates. 
+
+- Implemented responsive UI components and form handling features, improving overall user experience and reducing bounce rate. 
 
 ## Projects 
 
@@ -44,23 +46,19 @@ May 2026 – July 2026
 
 - Built an **LLM-powered** pipeline using **prompt engineering** for job ranking and categorization, featuring a manual review workflow and a local mock portal for safe system validation. 
 
-**NoteBridge** _| React.js, Express.js, MongoDB, Bootstrap |_ _<u>GitHub</u> | Deployed Project_ 
-
-- A **feature-rich note-taking and sharing platform** that enables **structured organization** through folders and facilitates **controlled file sharing** . 
-
-- Enables **interactive engagement** through features like **likes** , **comments** , and **shares** . 
-
-- Provides a **comprehensive profile page** displaying total posts, followers, following, and an **organized archive of past posts** for easy access and engagement. 
-
 ## Technical Skills 
 
-**AI/ML & Agents** : LangChain, LangGraph, TensorFlow, Keras, Deep Learning, ANN, CNN, LSTM. **Technologies** : Node.js, FastAPI, Express.js, Docker, Next.js, React.js, Tailwind CSS, Three.js, GSAP. **Database & Cloud** : MongoDB, PostgreSQL, Vector Databases. 
+**AI/ML & Agents** : LangChain, LangGraph, TensorFlow, Keras, Deep Learning, ANN, CNN, LSTM. **Technologies** : FastAPI, Next.js, React.js, Express.js, Docker, Tailwind CSS, Node.js, Three.js, GSAP. **Languages** : Python, C++, C, JavaScript, HTML. **Database & Cloud** : Firebase, MongoDB, PostgreSQL, Vector Databases. 
 
 ## Achievements 
 
 - Secured **4th** rank at **HaXplore** _|_ **CodeFest’25** , organized by **IIT BHU!** 
 
 - **Winner** - of Winter Of Code 6.O (in Web Development Division) a one-month long hackathon conducted by **CyberLabs** , IIT(ISM) Dhanbad. _| Deployed Project_ 
+
+- Achieved an **All India Rank (AIR) 235** among approximately 0.125 million candidates in **West Bengal Joint Entrance Examination (WBJEE)** 2023. 
+
+- Secured **99.14 percentile** , ranking among the top 0.86% of **1.16 million** candidates in **JEE Mains** 2023. 
 
 ## Social Engagements 
 
