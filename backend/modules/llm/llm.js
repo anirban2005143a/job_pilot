@@ -2,6 +2,7 @@ import fs from "fs/promises";
 import path from "path";
 import axios from "axios";
 import { getenv } from "../../config/env.js";
+import { preferencesToParagraph } from "../user/utils.js";
 class LLMModule {
   constructor(user) {
     if (!user) {
@@ -104,6 +105,27 @@ class LLMModule {
     }
 
     return resumeSummary;
+  }
+
+  async matchJob(job) {
+    if (!job) {
+      throw new Error("Job object is required");
+    }
+
+    if (!this.user?.summary) {
+      throw new Error("User summary is required");
+    }
+
+    const userPreferences = preferencesToParagraph(this.user.preferences || {});
+    const userInstruction = `My preferences are - ${user_preferences}`;
+
+    const response = await axios.post(`${this.pythonApiBaseUrl}/match-job`, {
+      user_summary: this.user.summary,
+      job,
+      user_instruction: userInstruction,
+    });
+
+    return response.data;
   }
 }
 

@@ -18,7 +18,7 @@ export const uploadResumeController = async (req, res) => {
 
     const userId = req.user._id;
     // Get current resume count before processing files.
-    const user = await User.findById(userId)
+    const user = await User.findById(userId);
     const currentResumeCount = user.resumes?.length ?? 0;
     const incomingResumeCount = req.files.length;
 
@@ -38,20 +38,19 @@ export const uploadResumeController = async (req, res) => {
       const resumeDocument = new ResumeDocument({ userId, file });
       await resumeDocument.process();
       resumeDocuments.push(resumeDocument);
-      user.resumes.push(resumeDocument.getRelativePath())
+      user.resumes.push(resumeDocument.getRelativePath());
     }
 
     const resumePaths = resumeDocuments.map((resumeDocument) =>
       resumeDocument.getRelativePath(),
     );
 
-  
     // ------------------------------------------------
     // Generate / update resume summary
     // ------------------------------------------------
 
     let resumeSummary;
-    const llmModule = new LLMModule(user)
+    const llmModule = new LLMModule(user);
     if (currentResumeCount === 0) {
       // First ever resume upload
       resumeSummary = await llmModule.summarizeAllResumes();
@@ -84,8 +83,8 @@ export const uploadResumeController = async (req, res) => {
 
     await User.findByIdAndUpdate(
       userId,
-      { $set: { summary : resumeSummary } },
-      { new: true, runValidators: true,},
+      { $set: { summary: resumeSummary } },
+      { new: true, runValidators: true },
     );
 
     return res.status(200).json({
@@ -105,33 +104,35 @@ export const uploadResumeController = async (req, res) => {
 
 export const addPreferenceController = async (req, res) => {
   try {
+    const userId = req.user._id;
     const { preferences } = req.body;
 
     const user = await User.findByIdAndUpdate(
-      req.user._id,
+      userId,
       {
-        $addToSet: {
-          preferences: {
-            $each: preferences,
-          },
+        $set: {
+          preferences,
         },
       },
       {
         new: true,
         runValidators: true,
       },
-    );
+    ).select("-password");
 
     return res.status(200).json({
-      message: "Preferences added successfully",
-      preferences: user.preferences,
+      success: true,
+      message: "Preferences updated successfully",
+      data: {
+        preferences: user.preferences,
+      },
     });
   } catch (error) {
-    console.error("Add preference error:", error);
+    console.error("addPreferenceController error:", error);
 
     return res.status(500).json({
-      message: "Failed to add preferences",
-      error: error.message,
+      success: false,
+      message: "Failed to update preferences",
     });
   }
 };

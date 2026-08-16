@@ -4,7 +4,9 @@ import { Job } from "../../job/job.model.js";
 
 export class JobSource1 extends JobSource {
   constructor() {
-    super("Dummy Job Source");
+    const max_application_per_hour = 100
+    super("Dummy Job Source", max_application_per_hour );
+    
     this.base_url = "http://localhost:4000"
   }
 
