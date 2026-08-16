@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import User from "../user/user.model.js";
+import { getenv } from "../config/env.js";
 
 export const authenticateUser = async (req, res, next) => {
   try {
@@ -15,7 +16,7 @@ export const authenticateUser = async (req, res, next) => {
 
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET
+      getenv("JWT_SECRET")
     );
 
     // Check whether user still exists in database

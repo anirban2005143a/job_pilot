@@ -1,6 +1,10 @@
 import fs from "fs/promises";
 import path from "path";
+import { getenv } from "../config/env.js";
 import User from "./user.model.js";
+import { ResumeDocument } from "./resume/ResumeDocument.js";
+
+const MAX_RESUMES = Number(getenv("MAX_RESUMES") || 0);
 
 export const uploadResumeController = async (req, res) => {
   try {
@@ -12,88 +16,47 @@ export const uploadResumeController = async (req, res) => {
     }
 
     const userId = req.user._id;
+    // Get current resume count before processing files.
+    const user = await User.findById(userId).select("resumes");
+    const currentResumeCount = user.resumes?.length ?? 0;
+    const incomingResumeCount = req.files.length;
 
-    const userResumeDir = path.join(
-      process.cwd(),
-      "uploads",
-      "resumes",
-      userId.toString()
-    );
-
-    await fs.mkdir(userResumeDir, {
-      recursive: true,
-    });
-
-    const resumePaths = [];
-
-    for (const file of req.files) {
-      // Keep original filename
-      const filename = path.basename(file.originalname);
-
-      const resumePath = path.join(
-        userResumeDir,
-        filename
-      );
-
-      // Save original resume
-      await fs.writeFile(
-        resumePath,
-        file.buffer
-      );
-
-      // Extract resume text/content
-      const content = await extractResumeContent(file);
-
-      // Save extracted content as Markdown
-      const markdownFilename = `${path.parse(filename).name}.md`;
-
-      const markdownPath = path.join(
-        userResumeDir,
-        markdownFilename
-      );
-
-      await fs.writeFile(
-        markdownPath,
-        content,
-        "utf-8"
-      );
-
-      // Path stored in MongoDB
-      const relativePath = path
-        .join(
-          "uploads",
-          "resumes",
-          userId.toString(),
-          filename
-        )
-        .replaceAll("\\", "/");
-
-      resumePaths.push(relativePath);
+    const totalResumeCount = currentResumeCount + incomingResumeCount;
+    if (totalResumeCount > MAX_RESUMES) {
+      return res.status(400).json({
+        success: false,
+        message: `You can have a maximum of ${MAX_RESUMES} resumes.`,
+        currentCount: currentResumeCount,
+        requestedCount: incomingResumeCount,
+        remainingSlots: Math.max(MAX_RESUMES - currentResumeCount, 0),
+      });
     }
 
-    // Update user's resumes
-    const user = await User.findByIdAndUpdate(
-      userId,
-      {
-        $push: {
-          resumes: {
-            $each: resumePaths,
-          },
-        },
-      },
-      {
-        new: true,
-        runValidators: true,
-      }
+    const resumeDocuments = [];
+    for (const file of req.files) {
+      const resumeDocument = new ResumeDocument({ userId, file });
+      await resumeDocument.process();
+      resumeDocuments.push(resumeDocument);
+    }
+
+    const resumePaths = resumeDocuments.map((resumeDocument) =>
+      resumeDocument.getRelativePath(),
     );
 
+    await User.findByIdAndUpdate(
+      userId,
+      { $push: { resumes: { $each: resumePaths } } },
+      { new: true, runValidators: true },
+    );
     return res.status(200).json({
+      success: true,
       message: "Resume(s) uploaded successfully",
+      resumes: resumePaths,
     });
   } catch (error) {
     console.error("Upload resume error:", error);
-
     return res.status(500).json({
+      success: false,
       message: "Failed to upload resume",
       error: error.message,
     });
@@ -116,7 +79,7 @@ export const addPreferenceController = async (req, res) => {
       {
         new: true,
         runValidators: true,
-      }
+      },
     );
 
     return res.status(200).json({

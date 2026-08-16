@@ -1,11 +1,9 @@
-import {app} from "./app.js";
-import dotenv from "dotenv";
+import { app } from "./app.js";
+import { getenv } from "./config/env.js";
 import { MongoDatabase } from "./database/MongoDatabase.js";
 
-dotenv.config();
-
-const PORT = process.env.PORT || 5000;
-const MONGO_URI = process.env.MONGO_URI;
+const PORT = Number(getenv("PORT") || 5000);
+const MONGO_URI = getenv("MONGO_URI");
 
 const startServer = async () => {
   try {

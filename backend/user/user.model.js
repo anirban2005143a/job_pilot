@@ -1,4 +1,7 @@
 import mongoose from "mongoose";
+import { getenv } from "../config/env.js";
+
+const MAX_RESUMES = Number(getenv("MAX_RESUMES") || 0);
 
 const userSchema = new mongoose.Schema(
   {
@@ -15,10 +18,16 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    
+
     resumes: {
       type: [String],
       default: [],
+      validate: {
+        validator: function (resumes) {
+          return resumes.length <= MAX_RESUMES;
+        },
+        message: `A user can have a maximum of ${MAX_RESUMES} resumes.`,
+      },
     },
 
     preferences: {
