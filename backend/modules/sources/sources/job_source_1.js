@@ -1,11 +1,11 @@
 import axios from "axios";
 import { JobSource } from "../JobSource.js";
-import { Job } from "../../job/job.model.js";
+import { Job } from "../../job/job.type.js";
 
 export class JobSource1 extends JobSource {
   constructor() {
     const max_application_per_hour = 100
-    super("Dummy Job Source", max_application_per_hour );
+    super("Job Source 1", max_application_per_hour, 10*1000 );
     
     this.base_url = "http://localhost:4000"
   }
