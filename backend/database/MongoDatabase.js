@@ -1,4 +1,4 @@
-  import mongoose from "mongoose";
+import mongoose from "mongoose";
 
 export class MongoDatabase {
   constructor(uri) {
@@ -17,6 +17,8 @@ export class MongoDatabase {
 
     await mongoose.connect(this.uri);
 
+    console.log("MongoDB connected successfully");
+
     this.connection = mongoose.connection;
 
     return this.connection;
@@ -26,6 +28,8 @@ export class MongoDatabase {
     if (this.connection) {
       await mongoose.disconnect();
     }
+
+    console.log("MongoDB disconnected");
 
     this.connection = undefined;
   }

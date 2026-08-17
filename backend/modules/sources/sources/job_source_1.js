@@ -3,11 +3,14 @@ import { JobSource } from "../JobSource.js";
 import { Job } from "../../job/job.type.js";
 
 export class JobSource1 extends JobSource {
-  constructor() {
+  constructor(base_url) {
+    if(!base_url){
+      throw new Error("Job Source must provide a base url")
+    }
     const max_application_per_hour = 100
     super("Job Source 1", max_application_per_hour, 10*1000 );
     
-    this.base_url = "http://localhost:4000"
+    this.base_url = base_url
   }
 
   async fetchJobs() {

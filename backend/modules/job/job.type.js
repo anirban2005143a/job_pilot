@@ -1,6 +1,6 @@
 // job.js
 
-class Job {
+export class Job {
   constructor({
     id,
     title,
@@ -31,5 +31,3 @@ class Job {
     this.description = description;
   }
 }
-
-module.exports = {Job};

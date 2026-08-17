@@ -12,8 +12,6 @@ const startServer = async () => {
 
     await database.connect();
 
-    console.log("MongoDB connected successfully");
-
     // Start Express server
     const server = app.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`);
@@ -24,9 +22,7 @@ const startServer = async () => {
       console.log("Shutting down server...");
 
       server.close(async () => {
-        await database.disconnect();
-
-        console.log("MongoDB disconnected");
+        await database.disconnect();       
         process.exit(0);
       });
     };

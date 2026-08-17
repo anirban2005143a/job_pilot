@@ -1,3 +1,7 @@
+import { getenv } from "../../config/env.js";
+
+const BATCH_SIZE = Number(getenv("MATCH_QUEUE_BATCH_SIZE") || 20);
+
 export class JobCollector {
   constructor(jobRepository, matchingQueue) {
     this.sources = new Map();
@@ -20,6 +24,7 @@ export class JobCollector {
     }
 
     this.sources.set(source.source_name, source);
+    console.log(`Job Source - ${source.source_name} registered Successfully`);
   }
 
   async pollSource(source) {
@@ -32,14 +37,7 @@ export class JobCollector {
       );
 
       if (newJobs.length > 0) {
-        await this.matchingQueue.addBulk(
-          newJobs.map((job) => ({
-            name: "match-job",
-            data: {
-              jobId: job._id.toString(),
-            },
-          })),
-        );
+        await this.pushToMatchingQueue(newJobs);
       }
 
       console.log(
@@ -47,12 +45,6 @@ export class JobCollector {
       );
     } catch (error) {
       console.error(`[Collector] ${source.source_name} failed:`, error.message);
-    }
-  }
-
-  async start() {
-    for (const source of this.sources.values()) {
-      this.pollLoop(source);
     }
   }
 
@@ -66,6 +58,23 @@ export class JobCollector {
       const delay = Math.max(0, source.pollingInterval - elapsed);
 
       await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+
+  async pushToMatchingQueue(jobs) {
+    for (let i = 0; i < jobs.length; i += BATCH_SIZE) {
+      const batch = jobs.slice(i, i + BATCH_SIZE);
+
+      await this.matchingQueue.add("match-jobs", {
+        jobIds: batch.map((job) => job._id.toString()),
+      });
+    }
+  }
+
+  async start() {
+    console.log(`[Collector] Started with ${this.getSources().length} sources`);
+    for (const source of this.sources.values()) {
+      this.pollLoop(source);
     }
   }
 

@@ -7,7 +7,7 @@ const jobSchema = new mongoose.Schema(
       required: true,
     },
 
-    externalJobId: {
+    jobId: {
       type: String,
       required: true,
     },
@@ -41,7 +41,7 @@ const jobSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-jobSchema.index({ sourceId: 1, externalJobId: 1 }, { unique: true });
+jobSchema.index({ sourceId: 1, jobId: 1 }, { unique: true });
 
 const JobModel = mongoose.model("Job", jobSchema);
 
@@ -53,12 +53,12 @@ export class JobRepository {
       updateOne: {
         filter: {
           sourceId,
-          externalJobId: job.id,
+          jobId: job.id,
         },
         update: {
           $setOnInsert: {
             sourceId,
-            externalJobId: job.id,
+            jobId: job.id,
             ...job,
             status: "discovered",
           },
