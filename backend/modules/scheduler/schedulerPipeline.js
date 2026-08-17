@@ -1,7 +1,16 @@
+import Redis from "ioredis";
+
 import User from "../user/user.model.js";
 import Source from "../sources/source.model.js";
 import { JobModel } from "../job/job.repository.js";
 import { applyQueue } from "../apply/apply.queue.js"; 
+
+import { getenv } from "../../config/env.js";
+
+const redis = new Redis({
+  host: getenv("REDIS_HOST"),
+  port: Number(getenv("REDIS_PORT")),
+});
 
 export class SchedulerPipeline {
   async schedule({ userId, jobId }) {

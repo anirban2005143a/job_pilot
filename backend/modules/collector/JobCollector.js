@@ -34,7 +34,7 @@ export class JobCollector {
     try {
       const jobs = await source.getJobs();
 
-      const newJobs = await this.jobRepository.saveJobs(source._id, jobs);
+      const newJobs = await this.jobRepository.saveJobs(source.sourceId, jobs);
 
       if (newJobs.length > 0) {
         await this.pushToMatchingQueue(newJobs);

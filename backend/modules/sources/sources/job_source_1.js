@@ -25,6 +25,7 @@ export class JobSource1 extends JobSource {
 
     super(sourceName, max_application_per_hour, pollingInterval);
 
+    this.sourceId = sourceId;
     this.base_url = base_url;
   }
 
