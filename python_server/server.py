@@ -6,9 +6,13 @@ from pathlib import Path
 
 from api_models.summarize_resume import ResumeSummaryRequest, ResumeSummaryResponse
 from api_models.match_job import MatchJobRequest
+from api_models.clarify_job import JobClarificationRequest
 from llm.summarize.summarize_resume import summarize_resume
 from llm.match_job.match_job import match_user_to_job
 from llm.match_job.match_job_schema import JobMatchResult
+from llm.clarify_job.clarify_job_schema import JobClarificationResult
+from llm.clarify_job.clarify_job import create_job_clarification
+
 
 app = FastAPI(
     title="Resume Parser API",
@@ -133,4 +137,37 @@ def match_job(
         raise HTTPException(
             status_code=500,
             detail=f"Job matching failed: {str(e)}",
+        )
+        
+       
+@app.post(
+    "/clarify-job",
+    response_model=JobClarificationResult,
+)
+def generate_job_clarification(
+    request: JobClarificationRequest,
+) -> JobClarificationResult:
+
+    try:
+        user_data = {
+            "summary": request.user_data.get("summary", ""),
+            "preferences": request.user_data.get("preferences", {}),
+        }
+
+        return create_job_clarification(
+            user_data=user_data,
+            job_data=request.job_data,
+            match_result=request.match_result,
+        )
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=str(e),
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to generate job clarification.",
         )
