@@ -2,7 +2,7 @@ import pLimit from "p-limit";
 import { JobRepository } from "../job/job.repository.js";
 import User from "../user/user.model.js";
 import { LLMModule } from "../llm/llm.js";
-import { schedulerQueue } from "../jobScheduler/scheduler.queue.js";
+import { schedulerQueue } from "../scheduler/scheduler.queue.js";
 import { clarificationQueue } from "../needsClarification/clarification.queue.js";
 import { JobMatch } from "../job/jobMatch.model.js";
 

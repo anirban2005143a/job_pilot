@@ -43,7 +43,7 @@ const jobSchema = new mongoose.Schema(
 
 jobSchema.index({ sourceId: 1, jobId: 1 }, { unique: true });
 
-const JobModel = mongoose.model("Job", jobSchema);
+export const JobModel = mongoose.model("Job", jobSchema);
 
 export class JobRepository {
   async saveJobs(sourceId, jobs) {

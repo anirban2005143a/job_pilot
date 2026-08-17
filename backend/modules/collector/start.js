@@ -5,6 +5,7 @@ import { JobCollector } from "./JobCollector.js";
 import { JobRepository } from "../job/job.repository.js";
 import { matchingQueue } from "../matching/matching.queue.js";
 import { JobSource1 } from "../sources/sources/job_source_1.js";
+import { JobSource } from "../sources/JobSource.js";
 
 const jobSource1_base_url = getenv("JOBSOURCE1_BASE_URL");
 
@@ -24,7 +25,18 @@ const startCollector = async () => {
     const collector = new JobCollector();
 
     // 3. Register sources
-    const jobSource1 = new JobSource1(jobSource1_base_url, 100, 60 * 1000);
+    const newSource1 = new JobSource("Job Source 1", 100, 60 * 1000);
+    await newSource1.register()
+    console.log(newSource1.sourceId, )
+    const jobSource1 = new JobSource1(
+      newSource1.sourceId,
+      newSource1.source_name,
+      jobSource1_base_url,
+      100,
+      60 * 1000,
+    );
+
+    //register source to collector 
     collector.registerSource(jobSource1);
 
     // 4. Start continuous polling

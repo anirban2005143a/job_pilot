@@ -3,20 +3,29 @@ import { JobSource } from "../JobSource.js";
 import { Job } from "../../job/job.type.js";
 
 export class JobSource1 extends JobSource {
-  constructor(base_url,max_application_per_hour, pollingInterval) {
-    if(!base_url){
-      throw new Error("Job Source must provide a base url")
-    }
-    if(!max_application_per_hour){
-      throw new Error("Job Source must provide a maximum limit of submit application per hour.")
-    }
-    if(!pollingInterval){
-      throw new Error("Job Source must provide a time interval between two job polling.")
-    }
+  constructor(
+    sourceId,
+    sourceName,
+    base_url,
+    max_application_per_hour,
+    pollingInterval,
+  ) {
+    if (!sourceId) throw new Error("Job Source must provide a source id");
+    if (!sourceName) throw new Error("Job Source must provide a source name");
+    if (!base_url) throw new Error("Job Source must provide a base url");
+    if (!max_application_per_hour)
+      throw new Error(
+        "Job Source must provide a maximum limit of submit application per hour.",
+      );
 
-    super("Job Source 1", max_application_per_hour, pollingInterval );
-    
-    this.base_url = base_url
+    if (!pollingInterval)
+      throw new Error(
+        "Job Source must provide a time interval between two job polling.",
+      );
+
+    super(sourceName, max_application_per_hour, pollingInterval);
+
+    this.base_url = base_url;
   }
 
   async fetchJobs() {

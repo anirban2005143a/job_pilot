@@ -29,14 +29,12 @@ export class JobCollector {
     console.log(`Job Source - ${source.source_name} registered Successfully`);
   }
 
+  //source - JobSource object
   async pollSource(source) {
     try {
       const jobs = await source.getJobs();
 
-      const newJobs = await this.jobRepository.saveJobs(
-        source.source_name,
-        jobs,
-      );
+      const newJobs = await this.jobRepository.saveJobs(source._id, jobs);
 
       if (newJobs.length > 0) {
         await this.pushToMatchingQueue(newJobs);
