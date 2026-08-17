@@ -1,13 +1,15 @@
 import { getenv } from "../../config/env.js";
+import { JobRepository } from "../job/job.repository.js";
+import { matchingQueue } from "../matching/matching.queue.js";
 
 const BATCH_SIZE = Number(getenv("MATCH_QUEUE_BATCH_SIZE") || 20);
 
 export class JobCollector {
-  constructor(jobRepository, matchingQueue) {
+  constructor() {
     this.sources = new Map();
     this.timers = new Map();
 
-    this.jobRepository = jobRepository;
+    this.jobRepository = new JobRepository();
     this.matchingQueue = matchingQueue;
 
     this.stopped = false;
@@ -62,11 +64,9 @@ export class JobCollector {
   }
 
   async pushToMatchingQueue(jobs) {
-    for (let i = 0; i < jobs.length; i += BATCH_SIZE) {
-      const batch = jobs.slice(i, i + BATCH_SIZE);
-
-      await this.matchingQueue.add("match-jobs", {
-        jobIds: batch.map((job) => job._id.toString()),
+    for (const job of jobs) {
+      await this.matchingQueue.add("match-job", {
+        jobId: job._id.toString(),
       });
     }
   }

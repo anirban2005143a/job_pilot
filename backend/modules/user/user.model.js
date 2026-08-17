@@ -227,7 +227,7 @@ const userSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ["active", "paused"],
-      default: "paused",
+      default: "active", // will create a endpoint to change the status value 
     },
 
     max_applications_per_day: {

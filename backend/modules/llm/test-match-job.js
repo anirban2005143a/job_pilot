@@ -18,9 +18,9 @@ export const testMatchJob = async (userId) => {
     }
 
     // Connect to MongoDB
-    // await mongoose.connect(MONGO_URI);
+    await mongoose.connect(MONGO_URI);
 
-    // console.log("Connected to MongoDB");
+    console.log("Connected to MongoDB");
 
     // Fetch user
     const user = await User.findById(userId);
@@ -86,3 +86,4 @@ export const testMatchJob = async (userId) => {
   }
 };
 
+testMatchJob("6a818ad3e95b19e1b782bb7a");

@@ -3,8 +3,7 @@ import path from "path";
 import axios from "axios";
 import { getenv } from "../../config/env.js";
 import { preferencesToParagraph } from "../user/utils.js";
-import { testMatchJob } from "./test-match-job.js";
-class LLMModule {
+export class LLMModule {
   constructor(user) {
     if (!user) {
       throw new Error("User object is required");
@@ -131,7 +130,3 @@ class LLMModule {
     return response.data;
   }
 }
-
-testMatchJob("6a818ad3e95b19e1b782bb7a");
-
-export { LLMModule };

@@ -79,4 +79,8 @@ export class JobRepository {
       _id: { $in: insertedIds },
     });
   }
+
+  async getJobById(jobId) {
+    return JobModel.findById(jobId);
+  }
 }

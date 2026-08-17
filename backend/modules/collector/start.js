@@ -2,16 +2,16 @@ import { getenv } from "../../config/env.js";
 import { MongoDatabase } from "../../database/MongoDatabase.js";
 
 import { JobCollector } from "./JobCollector.js";
-import { JobRepository } from "../job/job.repository.js"; 
-import { matchingQueue } from "../queues/matching.queue.js";
+import { JobRepository } from "../job/job.repository.js";
+import { matchingQueue } from "../matching/matching.queue.js";
 import { JobSource1 } from "../sources/sources/job_source_1.js";
 
-const jobSource1_base_url = getenv("JOBSOURCE1_BASE_URL")
+const jobSource1_base_url = getenv("JOBSOURCE1_BASE_URL");
 
 const startCollector = async () => {
   let database;
 
-  console.log(getenv("MONGO_URI"))
+  console.log(getenv("MONGO_URI"));
 
   try {
     // 1. Connect DB
@@ -21,13 +21,10 @@ const startCollector = async () => {
     // 2. Dependencies
     const jobRepository = new JobRepository();
 
-    const collector = new JobCollector(
-      jobRepository,
-      matchingQueue
-    );
+    const collector = new JobCollector();
 
     // 3. Register sources
-    const jobSource1 = new JobSource1(jobSource1_base_url);
+    const jobSource1 = new JobSource1(jobSource1_base_url, 100, 60 * 1000);
     collector.registerSource(jobSource1);
 
     // 4. Start continuous polling
