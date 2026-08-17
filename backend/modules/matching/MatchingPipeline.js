@@ -4,7 +4,6 @@ import User from "../user/user.model.js";
 import { LLMModule } from "../llm/llm.js";
 import { schedulerQueue } from "../jobScheduler/scheduler.queue.js";
 import { clarificationQueue } from "../needsClarification/clarification.queue.js";
-import { rejectQueue } from "../rejectedJob/reject.queue.js";
 import { JobMatch } from "../job/jobMatch.model.js";
 
 const limit = pLimit(5);
@@ -56,11 +55,7 @@ export class MatchingPipeline {
               jobId: job._id.toString(),
               userId: user._id.toString(),
             });
-          } else if (result.result === "reject") {
-            await rejectQueue.add("reject-job", {
-              jobId: job._id.toString(),
-              userId: user._id.toString(),
-            });
+          
           } else if (result.result === "needs_clarification") {
             await clarificationQueue.add("clarify-job", {
               jobId: job._id.toString(),

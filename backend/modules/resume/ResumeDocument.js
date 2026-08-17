@@ -2,7 +2,7 @@ import fs from "fs/promises";
 import path from "path";
 import { randomUUID } from "crypto";
 
-import {extractResumeContent} from "../../services/resume/extractResumeContent.js"
+import {extractResumeContent} from "./extractResumeContent.js"
 
 export class ResumeDocument {
 
