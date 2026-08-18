@@ -8,6 +8,7 @@ from api_models.summarize_resume import ResumeSummaryRequest, ResumeSummaryRespo
 from api_models.match_job import MatchJobRequest
 from api_models.clarify_job import JobClarificationRequest
 from api_models.create_resume import CreateResumeRequest
+from api_models.create_cover_letter import CreateCoverLetterRequest,CreateCoverLetterResponse
 from llm.summarize.summarize_resume import summarize_resume
 from llm.match_job.match_job import match_user_to_job
 from llm.match_job.match_job_schema import JobMatchResult
@@ -15,6 +16,8 @@ from llm.clarify_job.clarify_job_schema import JobClarificationResult
 from llm.clarify_job.clarify_job import create_job_clarification
 from llm.create_resume.create_resume_schema import CreateResumeResponse
 from llm.create_resume.create_resume import create_resume
+from llm.create_cover_letter.create_cover_letter import create_cover_letter
+
 
 app = FastAPI(
     title="Resume Parser API",
@@ -199,6 +202,38 @@ def generate_resume(
             job=request.job_data,
             user_instruction=request.user_instruction,
         )
+
+    except ValueError as e:
+        print(e)
+        raise HTTPException(
+            status_code=400,
+            detail=str(e),
+        )
+
+    except Exception as e:
+        print(e)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate resume. {e}",
+        )
+        
+
+@app.post(
+    "/create-cover-letter",
+    response_model=CreateCoverLetterResponse,
+)
+async def create_cover_letter_endpoint(
+    request: CreateCoverLetterRequest,
+):
+    try:
+        result = create_cover_letter(
+            user=request.user_data,
+            resume=request.resume,
+            job=request.job_data,
+            user_instruction=request.user_instruction,
+        )
+
+        return result
 
     except ValueError as e:
         print(e)

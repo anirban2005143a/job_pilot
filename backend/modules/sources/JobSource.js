@@ -48,6 +48,10 @@ export class JobSource {
     throw new Error("formatJobs() must be implemented");
   }
 
+  async applyJob() {
+    throw new Error("applyJob() must be implemented");
+  }
+
   async getJobs() {
     throw new Error("getJobs() must be implemented");
   }

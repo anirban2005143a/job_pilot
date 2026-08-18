@@ -30,9 +30,41 @@ export class JobSource1 extends JobSource {
   }
 
   async fetchJobs() {
-    const response = await axios.get(`${this.base_url}/jobs`);
+    try {
+      const response = await axios.get(`${this.base_url}/jobs`);
 
-    return response.data.jobs;
+      return response.data.jobs;
+    } catch (error) {
+      if (error.response) {
+        throw new Error(
+          error.response.data?.error || "Failed to apply for job",
+        );
+      }
+      throw error;
+    }
+  }
+
+  async applyJob({ job_id, user_id, name, email, resume, cover_letter }) {
+    try {
+      const response = await axios.post(`${this.base_url}/apply`, {
+        job_id,
+        user_id,
+        name,
+        email,
+        resume,
+        cover_letter,
+      });
+
+      return response.data;
+    } catch (error) {
+      if (error.response) {
+        throw new Error(
+          error.response.data?.error || "Failed to apply for job",
+        );
+      }
+
+      throw error;
+    }
   }
 
   formatJobs(jobs) {

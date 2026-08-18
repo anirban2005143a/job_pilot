@@ -51,10 +51,10 @@ app.get("/jobs", async (req, res) => {
   try {
     const jobs = await readJson(JOBS_FILE);
 
-    // Pick 10 random jobs
+    // Pick k random jobs
     const randomJobs = jobs
       .sort(() => Math.random() - 0.5)
-      .slice(0, 10);
+      .slice(0, 3);
 
     await addLog(
       "INFO",
