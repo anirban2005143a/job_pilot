@@ -51,3 +51,8 @@
 [2026-08-17T18:54:10.092Z] [INFO] [JOBS_FETCHED] Fetched 3 random jobs
 [2026-08-17T19:04:25.183Z] [INFO] [JOBS_FETCHED] Fetched 3 random jobs
 [2026-08-17T19:05:25.176Z] [INFO] [JOBS_FETCHED] Fetched 3 random jobs
+[2026-08-18T08:20:57.167Z] [INFO] [JOBS_FETCHED] Fetched 3 random jobs
+[2026-08-18T08:20:57.650Z] [INFO] [APPLICATION_SUBMITTED] Application submitted | application_id=9c4eec30-eec6-41e0-b072-592490dddcba job_id=job-101 user_id=dummy-user-456
+[2026-08-18T08:25:46.509Z] [INFO] [JOBS_FETCHED] Fetched 3 random jobs
+[2026-08-18T08:25:46.565Z] [INFO] [APPLICATION_SUBMITTED] Application submitted | application_id=6b55054a-3ba7-49cc-9baf-d3cbff0cdc73 job_id=job-101 user_id=dummy-user-456
+[2026-08-18T09:46:45.603Z] [INFO] [APPLICATION_SUBMITTED] Application submitted | application_id=481be3e9-7928-4bd0-9144-c19aa60aa0b0 job_id=job-102 user_id=6a834763a53b6dd7c28ef282

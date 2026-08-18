@@ -1,6 +1,6 @@
 import express from "express";
 import fs from "fs/promises";
-import { uuid } from "uuidv4";
+import { v4 as uuidv4 } from "uuid";
 
 const app = express();
 app.use(express.json());
@@ -52,14 +52,12 @@ app.get("/jobs", async (req, res) => {
     const jobs = await readJson(JOBS_FILE);
 
     // Pick k random jobs
-    const randomJobs = jobs
-      .sort(() => Math.random() - 0.5)
-      .slice(0, 3);
+    const randomJobs = jobs.sort(() => Math.random() - 0.5).slice(0, 3);
 
     await addLog(
       "INFO",
       "JOBS_FETCHED",
-      `Fetched ${randomJobs.length} random jobs`
+      `Fetched ${randomJobs.length} random jobs`,
     );
 
     res.json({
@@ -120,15 +118,20 @@ app.post("/apply", async (req, res) => {
       });
     }
 
+    // Random status for storage
+    const statuses = ["pending", "accepted", "rejected"];
+    const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
+
     const application = {
-      application_id: uuid(),
+      application_id: uuidv4(),
       job_id,
       user_id,
       name,
       email,
       resume,
       cover_letter,
-      status: "pending",
+      // Random status is stored in the file
+      status: randomStatus,
       applied_at: new Date().toISOString(),
     };
 
@@ -140,8 +143,10 @@ app.post("/apply", async (req, res) => {
       application_id: application.application_id,
       job_id,
       user_id,
+      stored_status: randomStatus,
     });
 
+    // But always return pending to the client
     res.status(201).json({
       application_id: application.application_id,
       status: "pending",
@@ -161,33 +166,44 @@ app.post("/apply", async (req, res) => {
 // GET /status
 // -------------------------
 
-app.get("/status", async (req, res) => {
+app.get("/check-status", async (req, res) => {
   try {
-    const { user_id } = req.query;
+    const { user_id, job_id } = req.query;
 
-    if (!user_id) {
+    if (!user_id || !job_id) {
       return res.status(400).json({
-        error: "user_id is required",
+        error: "user_id and job_id are required",
       });
     }
 
     const applications = await readJson(APPLICATIONS_FILE);
 
-    const userApplications = applications.filter(
-      (application) => application.user_id === user_id,
+    const application = applications.find(
+      (application) =>
+        application.user_id === user_id && application.job_id === job_id,
     );
+
+    if (!application) {
+      return res.status(404).json({
+        error: "Application not found",
+      });
+    }
 
     await addLog(
       "INFO",
       "STATUS_FETCHED",
-      `Fetched ${userApplications.length} applications`,
+      `Fetched application status: ${application.status}`,
       {
         user_id,
+        job_id,
+        status: application.status,
       },
     );
 
-    res.json({
-      applications: userApplications,
+    return res.json({
+      user_id,
+      job_id,
+      status: application.status,
     });
   } catch (error) {
     await addLog(
@@ -199,12 +215,11 @@ app.get("/status", async (req, res) => {
       },
     );
 
-    res.status(500).json({
+    return res.status(500).json({
       error: "Failed to fetch application status",
     });
   }
 });
-
 // -------------------------
 // Start server
 // -------------------------
