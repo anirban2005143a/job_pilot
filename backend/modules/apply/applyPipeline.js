@@ -18,11 +18,18 @@ export class ApplyPipeline {
     ]);
 
     if (!user) {
-      throw new Error(`User ${userId} not found`);
+      console.log(`[Apply Pipeline]User ${userId} not found`);
+      throw new Error(`[Apply Pipeline]User ${userId} not found`);
     }
 
     if (!job) {
-      throw new Error(`Job ${jobId} not found`);
+      console.log(`[Apply Pipeline]Job ${jobId} not found`);
+      throw new Error(`[Apply Pipeline]Job ${jobId} not found`);
+    }
+
+    if (user.status !== "active") {
+      console.log(`[Apply Pipeline]User ${userId} not active`);
+      throw new Error(`[Apply Pipeline]User ${userId} not active`);
     }
 
     const existingApplication = await ApplicationModel.findOne({
@@ -34,19 +41,20 @@ export class ApplyPipeline {
       console.log(
         `[Apply Pipeline] Application already exists for job ${jobId}, user ${userId}`,
       );
-
-      return existingApplication;
+      return;
     }
 
     // Source must exist and be active
     const source = await Source.findById(job.sourceId);
 
     if (!source) {
-      throw new Error(`Source ${job.sourceId} not found`);
+      console.log(`[Apply Pipeline] Source ${job.sourceId} not found`);
+      throw new Error(`[Apply Pipeline] Source ${job.sourceId} not found`);
     }
 
     if (!source.active) {
-      throw new Error(`Source ${source.name} is inactive`);
+      console.log(`[Apply Pipeline] Source ${source.name} is inactive`);
+      throw new Error(`[Apply Pipeline] Source ${source.name} is inactive`);
     }
 
     try {
@@ -59,17 +67,21 @@ export class ApplyPipeline {
         source.polling_interval,
       );
 
+      console.log(`[Apply Pipeline] Loading user resumes`)
       // Load markdown resumes
       const resumes = await loadResumes(user.resumes);
 
       // Generate resume and cover letter
       const llm = new LLMModule(user, job);
 
+      console.log(`[Apply Pipeline] Generating final resume for application`)
       const generatedResume = await llm.createMultipleResume(resumes);
 
+      console.log(`[Apply Pipeline] Generating cover letter for application`)
       const coverLetter = await llm.createCoverLetter(generatedResume, job);
 
       // Apply through source
+      console.log(`[Apply Pipeline] Applying to job ${jobId} for user ${userId}`)
       const response = await jobSource.applyJob({
         job_id: job.jobId,
         user_id: user._id.toString(),
@@ -80,6 +92,7 @@ export class ApplyPipeline {
       });
 
       // Persist application
+      console.log(`[Apply Pipeline] Storing application details in DB`)
       const application = await ApplicationModel.persistApplication({
         existingApplication,
         userId,
@@ -92,6 +105,7 @@ export class ApplyPipeline {
       });
 
       // Update application count
+      console.log(`[Apply Pipeline] Update user delay apply count`)
       await incrementUserApplicationCount(User, user);
 
       return application;

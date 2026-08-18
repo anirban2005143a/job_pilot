@@ -25,7 +25,12 @@ export class ClarificationPipeline {
         user: !!user,
         jobMatch: !!jobMatch,
       });
-      throw new Error("Job, user or job match not found");
+      throw new Error("[ClarificationPipeline] Job, user or job match not found");
+    }
+    
+    if(user.status !== "active"){
+      console.error("[ClarificationPipeline] User is not active. User id : ", user._id?.toString());
+      throw new Error(`[ClarificationPipeline] User is not active. User id : ${user._id?.toString()}`);
     }
 
     const llm = new LLMModule(user);
