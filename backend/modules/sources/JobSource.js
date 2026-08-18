@@ -4,6 +4,7 @@ export class JobSource {
   // pollingInterval is in milisecond
   constructor(
     source_name,
+    base_url,
     max_application_per_hour = 500,
     pollingInterval = 60 * 1000,
   ) {
@@ -11,9 +12,10 @@ export class JobSource {
       throw new Error("Source name is required");
     }
     this.source_name = source_name;
+    this.base_url = base_url;
     this.max_application_per_hour = max_application_per_hour;
     this.pollingInterval = pollingInterval;
-    this.sourceId = null
+    this.sourceId = null;
   }
 
   getMaxApplicationPerHour() {
@@ -25,6 +27,7 @@ export class JobSource {
       { name: this.source_name },
       {
         name: this.source_name,
+        base_url: this.base_url,
         polling_interval: this.pollingInterval,
         max_applications_per_hour: this.max_application_per_hour,
         active: true,
@@ -40,12 +43,12 @@ export class JobSource {
     return source;
   }
 
-  async fetchJobs() {
-    throw new Error("fetchJobs() must be implemented");
+  async _fetchJobs() {
+    throw new Error("_fetchJobs() must be implemented");
   }
 
-  formatJobs(jobs) {
-    throw new Error("formatJobs() must be implemented");
+  _formatJobs(jobs) {
+    throw new Error("_formatJobs() must be implemented");
   }
 
   async applyJob() {

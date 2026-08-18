@@ -8,7 +8,11 @@ const sourceSchema = new mongoose.Schema(
       unique: true,
       trim: true,
     },
-
+    base_url: {
+      type: String,
+      required: true,
+      trim: true,
+    },
     polling_interval: {
       type: Number,
       required: true,

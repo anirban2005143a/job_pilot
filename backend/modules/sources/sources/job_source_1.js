@@ -29,7 +29,7 @@ export class JobSource1 extends JobSource {
     this.base_url = base_url;
   }
 
-  async fetchJobs() {
+  async _fetchJobs() {
     try {
       const response = await axios.get(`${this.base_url}/jobs`);
 
@@ -67,7 +67,7 @@ export class JobSource1 extends JobSource {
     }
   }
 
-  formatJobs(jobs) {
+  _formatJobs(jobs) {
     return jobs.map(
       (job) =>
         new Job({
@@ -89,8 +89,8 @@ export class JobSource1 extends JobSource {
   }
 
   async getJobs() {
-    const jobs = await this.fetchJobs();
+    const jobs = await this._fetchJobs();
 
-    return this.formatJobs(jobs);
+    return this._formatJobs(jobs);
   }
 }
