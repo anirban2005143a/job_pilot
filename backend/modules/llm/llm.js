@@ -231,14 +231,14 @@ export class LLMModule {
 
   async clarifyJob(jobMatch) {
   if (!this.job || !jobMatch) {
-    throw new Error("Job and job match are required");
+    throw new Error("job data and job match data are required");
   }
 
   const response = await axios.post(
     `${this.pythonApiBaseUrl}/clarify-job`,
     {
-      job_data: job,
-      user_data: user,
+      job_data: this.job,
+      user_data: this.user,
       match_result: jobMatch,
     },
   );

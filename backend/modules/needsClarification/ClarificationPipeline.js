@@ -1,11 +1,11 @@
 import axios from "axios";
-
 import { getenv } from "../../config/env.js";
 import { JobMatch } from "../job/jobMatch.model.js";
 import { JobRepository } from "../job/job.repository.js";
 import User from "../user/user.model.js";
 import { notificationQueue } from "../notification/notification.queue.js";
 import { JobClarification } from "../job/jobClarification.model.js";
+import { LLMModule } from "../llm/llm.js";
 
 export class ClarificationPipeline {
   async process(jobId, userId) {
@@ -25,17 +25,37 @@ export class ClarificationPipeline {
         user: !!user,
         jobMatch: !!jobMatch,
       });
-      throw new Error("[ClarificationPipeline] Job, user or job match not found");
-    }
-    
-    if(user.status !== "active"){
-      console.error("[ClarificationPipeline] User is not active. User id : ", user._id?.toString());
-      throw new Error(`[ClarificationPipeline] User is not active. User id : ${user._id?.toString()}`);
+      throw new Error(
+        "[ClarificationPipeline] Job, user or job match not found",
+      );
     }
 
-    const llm = new LLMModule(user);
+    if (user.status !== "active") {
+      console.error(
+        "[ClarificationPipeline] User is not active. User id : ",
+        user._id?.toString(),
+      );
+      throw new Error(
+        `[ClarificationPipeline] User is not active. User id : ${user._id?.toString()}`,
+      );
+    }
 
-    const clarification = await llm.clarifyJob(job, user, jobMatch);
+    const existingClarification = await JobClarification.findOne({
+      jobId,
+      userId,
+    });
+
+    if (existingClarification) {
+      console.log(
+        `[ClarificationPipeline] Clarification already exists for userId=${userId}, jobId=${jobId}`,
+      );
+
+      return;
+    }
+
+    const llm = new LLMModule(user, job);
+
+    const clarification = await llm.clarifyJob(jobMatch);
 
     if (!clarification) {
       console.error(
