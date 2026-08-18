@@ -62,13 +62,13 @@ export class ResumeDocument {
     this.content = null;
   }
 
-  async createDirectory() {
+  async #createDirectory() {
     await fs.mkdir(this.userResumeDir, {
       recursive: true,
     });
   }
 
-  async saveOriginal() {
+  async #saveOriginal() {
     await fs.writeFile(
       this.originalPath,
       this.file.buffer
@@ -83,7 +83,7 @@ export class ResumeDocument {
     return this.content;
   }
 
-  async saveMarkdown(content = this.content) {
+  async #saveMarkdown(content = this.content) {
     if (!content) {
       throw new Error(
         "Resume content must be extracted before saving Markdown"
@@ -100,13 +100,13 @@ export class ResumeDocument {
   }
 
   async process() {
-    await this.createDirectory();
+    await this.#createDirectory();
 
     await this.extractContent();
 
-    await this.saveOriginal();
+    await this.#saveOriginal();
 
-    await this.saveMarkdown();
+    await this.#saveMarkdown();
 
     return this;
   }

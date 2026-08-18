@@ -4,17 +4,18 @@ import axios from "axios";
 import { getenv } from "../../config/env.js";
 import { preferencesToParagraph } from "../user/utils.js";
 export class LLMModule {
-  constructor(user) {
+  constructor(user, job = null) {
     if (!user) {
       throw new Error("User object is required");
     }
 
     this.user = user;
+    this.job = job;
 
     this.pythonApiBaseUrl = getenv("PYTHON_SERVER_BASE_URL");
 
     if (!this.pythonApiBaseUrl) {
-      throw new Error("PYTHON_API_BASE_URL is required");
+      throw new Error("PYTHON_SERVER_BASE_URL is required");
     }
   }
 
@@ -119,7 +120,7 @@ export class LLMModule {
     const userPreferences = preferencesToParagraph(this.user.preferences || {});
     const userInstruction = `My preferences are - ${userPreferences}`;
 
-    console.log("User preference :\n", userPreferences)
+    console.log("User preference :\n", userPreferences);
 
     const response = await axios.post(`${this.pythonApiBaseUrl}/match-job`, {
       user_summary: this.user.summary,
@@ -128,5 +129,103 @@ export class LLMModule {
     });
 
     return response.data;
+  }
+
+  async createResume(resume) {
+    if (!resume || typeof resume !== "string") {
+      throw new Error("Resume must be a string");
+    }
+
+    if (!this.job) {
+      throw new Error("Job object is required");
+    }
+
+    const response = await axios.post(
+      `${this.pythonApiBaseUrl}/create-resume`,
+      {
+        user_data: {
+          name: this.user.name || "",
+          email: this.user.email || "",
+          phone: this.user.phone || "",
+          linkedin: this.user.linkedin || "",
+          github: this.user.github || "",
+          portfolio: this.user.portfolio || "",
+        },
+
+        resumes: resume,
+
+        job_data: this.job.toObject ? this.job.toObject() : this.job,
+
+        user_instruction: "",
+      },
+    );
+
+    return response.data?.resume || "";
+  }
+
+  async createMultipleResume(resumes) {
+    if (!Array.isArray(resumes) || resumes.length === 0) {
+      throw new Error("Resumes must be a non-empty array");
+    }
+
+    if (resumes.length === 1) {
+      return this.createResume(resumes[0]);
+    }
+
+    let generatedResume = await this.createResume(
+      `
+        RESUME 1:
+        ${resumes[0]}
+
+        RESUME 2:
+        ${resumes[1]}
+      `.trim(),
+    );
+
+    for (let i = 2; i < resumes.length; i++) {
+      generatedResume = await this.createResume(
+        `
+          CURRENT RESUME:
+          ${generatedResume}
+
+          ADDITIONAL RESUME:
+          ${resumes[i]}
+        `.trim(),
+      );
+    }
+
+    return generatedResume;
+  }
+
+  async createCoverLetter(resume, job) {
+    if (!resume || typeof resume !== "string") {
+      throw new Error("Resume must be a string");
+    }
+
+    if (!job) {
+      throw new Error("Job object is required");
+    }
+
+    const response = await axios.post(
+      `${this.pythonApiBaseUrl}/create-cover-letter`,
+      {
+        user_data: {
+          name: this.user.name || "",
+          email: this.user.email || "",
+          phone: this.user.phone || "",
+          linkedin: this.user.linkedin || "",
+          github: this.user.github || "",
+          portfolio: this.user.portfolio || "",
+        },
+
+        resume,
+
+        job_data: job.toObject ? job.toObject() : job,
+
+        user_instruction: "",
+      },
+    );
+
+    return response.data?.cover_letter || "";
   }
 }

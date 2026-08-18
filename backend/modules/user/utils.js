@@ -143,3 +143,57 @@ export const preferencesToParagraph = (preferences = {}) => {
     ? `${parts.join(". ")}.`
     : "";
 };
+
+export const incrementUserApplicationCount = async (
+  UserModel,
+  user_data,
+) => {
+  if (!UserModel) {
+    throw new Error("UserModel is required");
+  }
+
+  if (
+    typeof UserModel.findByIdAndUpdate !== "function" ||
+    UserModel.modelName !== "User"
+  ) {
+    throw new Error("Invalid UserModel");
+  }
+
+  if (!user_data) {
+    throw new Error("user_data is required");
+  }
+
+  if (!user_data._id) {
+    throw new Error("user_data._id is required");
+  }
+
+  const now = new Date();
+
+  if (
+    !user_data.applications_today_reset_at ||
+    now >= user_data.applications_today_reset_at
+  ) {
+    await UserModel.findByIdAndUpdate(
+      user_data._id,
+      {
+        $set: {
+          applications_today: 1,
+          applications_today_reset_at: new Date(
+            now.getTime() + 24 * 60 * 60 * 1000,
+          ),
+        },
+      },
+    );
+
+    return;
+  }
+
+  await UserModel.findByIdAndUpdate(
+    user_data._id,
+    {
+      $inc: {
+        applications_today: 1,
+      },
+    },
+  );
+};
