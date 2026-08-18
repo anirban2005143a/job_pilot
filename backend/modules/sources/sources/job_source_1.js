@@ -94,9 +94,9 @@ export class JobSource1 extends JobSource {
     return this._formatJobs(jobs);
   }
 
-  async checkStatus(user_id, job_id) {
+  async checkStatus({ userId, jobId }) {
     const response = await fetch(
-      `${this.base_url}/check-status?user_id=${encodeURIComponent(user_id)}&job_id=${encodeURIComponent(job_id)}`,
+      `${this.base_url}/check-status?user_id=${encodeURIComponent(userId)}&job_id=${encodeURIComponent(jobId)}`,
     );
 
     const data = await response.json();
