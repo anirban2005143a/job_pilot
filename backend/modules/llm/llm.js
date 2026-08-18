@@ -4,13 +4,13 @@ import axios from "axios";
 import { getenv } from "../../config/env.js";
 import { preferencesToParagraph } from "../user/utils.js";
 export class LLMModule {
-  constructor(user, job = null) {
-    if (!user) {
+  constructor(user_data, job_data = null) {
+    if (!user_data) {
       throw new Error("User object is required");
     }
 
-    this.user = user;
-    this.job = job;
+    this.user = user_data;
+    this.job = job_data;
 
     this.pythonApiBaseUrl = getenv("PYTHON_SERVER_BASE_URL");
 
@@ -228,4 +228,21 @@ export class LLMModule {
 
     return response.data?.cover_letter || "";
   }
+
+  async clarifyJob(jobMatch) {
+  if (!this.job || !jobMatch) {
+    throw new Error("Job and job match are required");
+  }
+
+  const response = await axios.post(
+    `${this.pythonApiBaseUrl}/clarify-job`,
+    {
+      job_data: job,
+      user_data: user,
+      match_result: jobMatch,
+    },
+  );
+
+  return response.data;
+}
 }

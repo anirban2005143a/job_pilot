@@ -9,12 +9,14 @@ import { JobClarification } from "../job/jobClarification.model.js";
 
 export class ClarificationPipeline {
   async process(jobId, userId) {
+    console.log(
+      `[ClarificationPipeline] Processing clarification for userId=${userId}, jobId=${jobId}`,
+    );
+
     const jobRepository = new JobRepository();
 
     const job = await jobRepository.getJobById(jobId);
-
     const user = await User.findById(userId);
-
     const jobMatch = await JobMatch.findOne({ jobId, userId });
 
     if (!job || !user || !jobMatch) {
@@ -26,15 +28,9 @@ export class ClarificationPipeline {
       throw new Error("Job, user or job match not found");
     }
 
-    const pythonServerUrl = `${getenv("PYTHON_SERVER_BASE_URL")}/clarify-job`;
+    const llm = new LLMModule(user);
 
-    const response = await axios.post(pythonServerUrl, {
-      job_data: job,
-      user_data: user,
-      match_result: jobMatch,
-    });
-
-    const clarification = response.data;
+    const clarification = await llm.clarifyJob(job, user, jobMatch);
 
     if (!clarification) {
       console.error(
@@ -46,8 +42,9 @@ export class ClarificationPipeline {
     console.log("[ClarificationPipeline] Validating clarification response");
 
     if (
-      typeof clarification.needs_clarification !== "boolean" ||
+      !clarification ||
       !clarification.summary ||
+      typeof clarification.summary !== "string" ||
       !Array.isArray(clarification.clarification_points)
     ) {
       console.error(
@@ -66,7 +63,7 @@ export class ClarificationPipeline {
         userId,
         jobMatchId: jobMatch._id,
 
-        needs_clarification: clarification.needs_clarification,
+        needs_clarification: true,
         summary: clarification.summary,
         clarification_points: clarification.clarification_points,
       },
@@ -78,16 +75,16 @@ export class ClarificationPipeline {
 
     console.log(
       "[ClarificationPipeline] Job clarification saved:",
-      jobClarification?._id,
+      jobClarification?._id?.toString(),
     );
 
     await notificationQueue.add("job-clarification", {
+      type: "clarify",
       userId,
       jobId,
-      jobMatchId: jobMatch._id,
+      clarificationId: jobClarification._id,
     });
 
     console.log("[ClarificationPipeline] Notification queued successfully");
-    console.log("[ClarificationPipeline] Process completed\n");
   }
 }

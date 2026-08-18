@@ -25,18 +25,25 @@ const startCollector = async () => {
     const collector = new JobCollector();
 
     // 3. Register sources
-    const newSource1 = new JobSource("Job Source 1", 100, 60 * 1000);
-    await newSource1.register()
-    console.log(newSource1.sourceId, )
+    const newSource1 = new JobSource(
+      "Job Source 1",
+      jobSource1_base_url,
+      100,
+      2 * 60 * 1000,
+    );
+    await newSource1.register();
+
+    // console.log(`[Collector Module] Newly registered source : `, newSource1)
+
     const jobSource1 = new JobSource1(
       newSource1.sourceId,
       newSource1.source_name,
-      jobSource1_base_url,
-      100,
-      60 * 1000,
+      newSource1.base_url,
+      newSource1.max_application_per_hour,
+      newSource1.pollingInterval,
     );
 
-    //register source to collector 
+    //register source to collector
     collector.registerSource(jobSource1);
 
     // 4. Start continuous polling

@@ -16,7 +16,7 @@ export const applyWorker = new Worker(
       `[Apply Worker] Processing job ${jobId} for user ${userId}`,
     );
 
-    return pipeline.apply({
+    return pipeline.process({
       jobId,
       userId,
     });

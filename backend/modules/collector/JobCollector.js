@@ -55,7 +55,12 @@ export class JobCollector {
       await this.pollSource(source);
 
       const elapsed = Date.now() - startedAt;
-      const delay = Math.max(0, source.pollingInterval - elapsed);
+      const delay_offset_seconds =
+        Number(getenv("DELAY_OFFSET_SECONDS") || 0) * 1000;
+      const delay = Math.max(
+        0,
+        source.pollingInterval + delay_offset_seconds - elapsed,
+      );
 
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
