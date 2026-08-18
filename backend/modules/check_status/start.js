@@ -1,33 +1,35 @@
 import { getenv } from "../../config/env.js";
 import { MongoDatabase } from "../../database/MongoDatabase.js";
-import { checkStatusQueue } from "./check_status.queue.js"; 
-import { checkStatusWorker } from "./check_status.worker.js"; 
-import { startCheckStatusProducer } from "./check_status.producer.js"; 
+import { checkStatusQueue } from "./check_status.queue.js";
+import { checkStatusWorker } from "./check_status.worker.js";
+import { startCheckStatusProducer } from "./check_status.producer.js";
 
 const startStatusModule = async () => {
   let database;
   let producerInterval;
 
   try {
-    // 1. Connect DB
+    // Connect DB
     database = new MongoDatabase(getenv("MONGO_URI"));
     await database.connect();
 
-    // 2. Clear existing status jobs
+    console.log("[Check Status] Database connected");
+
+    // Clear old queue jobs
     await checkStatusQueue.obliterate({
       force: true,
     });
 
-    console.log("Status queue cleared.");
+    console.log("[Check Status] Queue cleared");
 
-    // 3. Start producer
+    // Start producer
     producerInterval = startCheckStatusProducer();
 
-    console.log("Status module started.");
+    console.log("[Check Status] Module started");
 
-    // 4. Graceful shutdown
+    // Graceful shutdown
     const shutdown = async () => {
-      console.log("[Status] Shutting down...");
+      console.log("[Check Status] Shutting down...");
 
       if (producerInterval) {
         clearInterval(producerInterval);
@@ -35,10 +37,9 @@ const startStatusModule = async () => {
 
       await checkStatusWorker.close();
       await checkStatusQueue.close();
-
       await database.disconnect();
 
-      console.log("[Status] Shutdown complete");
+      console.log("[Check Status] Shutdown complete");
 
       process.exit(0);
     };
@@ -46,7 +47,7 @@ const startStatusModule = async () => {
     process.on("SIGINT", shutdown);
     process.on("SIGTERM", shutdown);
   } catch (error) {
-    console.error("[Status] Failed to start:", error);
+    console.error("[Check Status] Failed to start:", error);
 
     if (producerInterval) {
       clearInterval(producerInterval);

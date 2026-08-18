@@ -24,6 +24,10 @@ const applicationSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    externalJobId: {
+      type: String,
+      default: null,
+    },
 
     resume: {
       type: String,
@@ -83,6 +87,8 @@ applicationSchema.statics.persistApplication = async function ({
     status,
     externalApplicationId:
       response?.application_id ?? null,
+    externalJobId:
+      response?.job_id ?? null,
     applied_at:
       status === "failed" ? null : new Date(),
     response: response ?? null,

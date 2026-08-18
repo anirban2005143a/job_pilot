@@ -44,6 +44,14 @@ export class JobSource1 extends JobSource {
     }
   }
 
+  /*
+  return {
+    application_id : (optional)/(required - if the checkStatus takes application id then its a required field),
+    job_id: (reuired),
+    user_id: (reuired),
+    status: (required),
+  }
+  */
   async applyJob({ job_id, user_id, name, email, resume, cover_letter }) {
     try {
       const response = await axios.post(`${this.base_url}/apply`, {
@@ -94,7 +102,7 @@ export class JobSource1 extends JobSource {
     return this._formatJobs(jobs);
   }
 
-  async checkStatus({ userId, jobId }) {
+  async checkStatus({ userId, jobId, application_id = "" }) {
     const response = await fetch(
       `${this.base_url}/check-status?user_id=${encodeURIComponent(userId)}&job_id=${encodeURIComponent(jobId)}`,
     );

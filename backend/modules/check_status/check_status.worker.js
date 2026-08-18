@@ -10,26 +10,31 @@ export const checkStatusWorker = new Worker(
   checkStatusQueue.name,
 
   async (job) => {
-    const { applicationId, userId, jobId, sourceId } = job.data;
+    const { applicationId, userId, jobId, sourceId, externalJobId } = job.data;
 
+    console.log(`[Check Status Worker] Checking application: ${applicationId}`);
+
+    // Check source
     const source = await Source.findById(sourceId);
 
     if (!source) {
-      console.logError(`[Check Status Module] Source not found: ${sourceId}`);
-      throw new Error(`[Check Status Module] Source not found: ${sourceId}`);
+      console.error(`[Check Status Worker] Source not found: ${sourceId}`);
+      throw new Error(`Source not found: ${sourceId}`);
     }
 
+    // Check application
     const application = await ApplicationModel.findById(applicationId);
 
     if (!application) {
-      console.log(
-        `[Check Status Module] Application not found: ${applicationId}`,
+      console.error(
+        `[Check Status Worker] Application not found: ${applicationId}`,
       );
-      throw new Error(
-        `[Check Status Module] Application not found: ${applicationId}`,
-      );
+      throw new Error(`Application not found: ${applicationId}`);
     }
 
+    console.log(`[Check Status Worker] Current status: ${application.status}`);
+
+    // Create job source
     const jobSource = new JobSource1(
       source._id,
       source.name,
@@ -38,26 +43,40 @@ export const checkStatusWorker = new Worker(
       source.polling_interval,
     );
 
+    // Check status from job source
+    console.log(`[Check Status Worker] Calling ${source.name} status API...`);
+
     const data = await jobSource.checkStatus({
-      userId,
-      jobId,
+      userId: userId,
+      jobId: externalJobId,
     });
+
     const status = data?.status;
 
     if (!status || typeof status !== "string") {
-      console.log(
-        `[Check Status Module] Status not found from job source : ${source.name}`,
+      console.error(
+        `[Check Status Worker] Invalid status received from ${source.name}`,
       );
-      throw new Error(
-        `[Check Status Module] Status not found from job source : ${source.name}`,
-      );
+      throw new Error("Invalid application status");
     }
 
+    console.log(`[Check Status Worker] New status: ${status}`);
+
+    // Update database
     await ApplicationModel.findByIdAndUpdate(applicationId, {
       $set: {
         status,
       },
     });
+
+    console.log(
+      `[Check Status Worker] Application updated: ${applicationId} -> ${status}`,
+    );
+
+    return {
+      applicationId,
+      status,
+    };
   },
 
   {
@@ -68,4 +87,12 @@ export const checkStatusWorker = new Worker(
   },
 );
 
-console.log("Status Worker Started...");
+checkStatusWorker.on("completed", (job) => {
+  console.log(`[Check Status Worker] Job completed: ${job.id}`);
+});
+
+checkStatusWorker.on("failed", (job, error) => {
+  console.error(`[Check Status Worker] Job failed: ${job?.id}`, error);
+});
+
+console.log("[Check Status Worker] Started...");

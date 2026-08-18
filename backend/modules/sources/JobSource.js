@@ -59,7 +59,7 @@ export class JobSource {
     throw new Error("getJobs() must be implemented");
   }
 
-  async checkStatus(userId, jobId) {
+  async checkStatus({userId, jobId, application_id}) {
     throw new Error("checkStatus() must be implemented");
   }
 }
