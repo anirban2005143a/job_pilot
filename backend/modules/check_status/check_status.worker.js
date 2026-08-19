@@ -4,7 +4,7 @@ import { getenv } from "../../config/env.js";
 import { checkStatusQueue } from "./check_status.queue.js";
 import Source from "../sources/source.model.js";
 import { ApplicationModel } from "../apply/application.model.js";
-import { createJobSourceObject } from "../sources/source.registry.js";
+import { createJobSourceObject, getSourceImplementation } from "../sources/source.registry.js";
 
 export const checkStatusWorker = new Worker(
   checkStatusQueue.name,

@@ -11,7 +11,7 @@ const produceStatusJobs = async () => {
 
     const applications = await ApplicationModel.find({
       status: "pending",
-    }).select("_id userId jobId sourceId externalJobId");
+    });
 
     console.log(
       `[Check Status Producer] Found ${applications.length} pending application(s)`,
