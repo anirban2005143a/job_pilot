@@ -12,8 +12,8 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_classic.output_parsers import OutputFixingParser
 
-# from .extract_user_info_prompt import EXTRACT_USER_INFO_PROMPT
-# from .extract_user_info_schema import UserInformation
+from .extract_user_info_prompt import EXTRACT_USER_INFO_PROMPT
+from .extract_user_info_schema import UserInformation
 
 
 load_dotenv()

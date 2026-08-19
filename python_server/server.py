@@ -23,6 +23,8 @@ from llm.extract_user_info.extract_user_info_schema import UserInformation
 from llm.extract_user_info.extract_user_info_prompt import EXTRACT_USER_INFO_PROMPT
 from llm.extract_user_info.extract_user_info import extract_user_information
 
+from parse_document.parse_document import pdf_to_markdown
+
 app = FastAPI(
     title="Resume Parser API",
     description="PDF to Markdown parser",
@@ -50,19 +52,22 @@ async def parse_resume(file: UploadFile = File(...)):
             detail="No filename provided",
         )
 
-    suffix = Path(file.filename).suffix.lower()
-
-    if suffix != ".pdf":
-        print(f"[POST /parse] ERROR: Invalid file type: {suffix}")
+    if Path(file.filename).suffix.lower() != ".pdf":
+        print(
+            f"[POST /parse] ERROR: Invalid file type: "
+            f"{Path(file.filename).suffix}"
+        )
         raise HTTPException(
             status_code=400,
             detail="Only PDF files are supported",
         )
 
-    # Read uploaded file
     content = await file.read()
 
-    print(f"[POST /parse] File read - size: {len(content)} bytes")
+    print(
+        f"[POST /parse] File read - size: "
+        f"{len(content)} bytes"
+    )
 
     if not content:
         print("[POST /parse] ERROR: Uploaded file is empty")
@@ -83,14 +88,14 @@ async def parse_resume(file: UploadFile = File(...)):
             temp_file.write(content)
             temp_path = Path(temp_file.name)
 
-        print(f"[POST /parse] Temporary file created: {temp_path}")
+        print(
+            f"[POST /parse] Temporary file created: "
+            f"{temp_path}"
+        )
 
         print("[POST /parse] Parsing PDF to Markdown...")
 
-        markdown = pymupdf4llm.to_markdown(
-            str(temp_path),
-            use_ocr=False,
-        )
+        markdown = pdf_to_markdown(str(temp_path))
 
         print(
             f"[POST /parse] PDF parsed successfully - "
@@ -104,6 +109,7 @@ async def parse_resume(file: UploadFile = File(...)):
 
     except Exception as e:
         print(f"[POST /parse] ERROR: {e}")
+
         raise HTTPException(
             status_code=500,
             detail=f"Failed to parse PDF: {str(e)}",
@@ -112,8 +118,11 @@ async def parse_resume(file: UploadFile = File(...)):
     finally:
         if temp_path and temp_path.exists():
             temp_path.unlink(missing_ok=True)
-            print(f"[POST /parse] Temporary file deleted: {temp_path}")
 
+            print(
+                f"[POST /parse] Temporary file deleted: "
+                f"{temp_path}"
+            )
 
 @app.post(
     "/summarize-resume",
