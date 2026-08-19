@@ -6,7 +6,7 @@ const MAX_STRING_LENGTH = 500;
 const MAX_SHORT_STRING_LENGTH = 100;
 const MAX_ARRAY_LENGTH = 10;
 
-export const addPreferenceSchema = z.object({
+export const upsertPreferenceSchema = z.object({
   preferences: z
     .object({
       // =========================
@@ -236,3 +236,20 @@ export const addPreferenceSchema = z.object({
     })
     .strict(),
 });
+
+export const updateProfileSchema = z
+  .object({
+    full_name: z.string().trim().max(MAX_SHORT_STRING_LENGTH).optional(),
+    phone: z.string().trim().max(MAX_SHORT_STRING_LENGTH).optional(),
+    linkedin_url: z.string().trim().url().optional(),
+    github_url: z.string().trim().url().optional(),
+    portfolio_url: z.string().trim().url().optional(),
+    max_applications_per_day: z.number().int().min(0).optional(),
+  })
+  .strict();
+
+export const updateStatusSchema = z
+  .object({
+    status: z.enum(["active", "paused"]),
+  })
+  .strict();

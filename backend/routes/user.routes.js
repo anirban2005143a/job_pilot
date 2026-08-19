@@ -2,10 +2,16 @@ import express from "express";
 import { validate } from "../middleware/validate.js";
 import { uploadResume } from "../middleware/multer.js";
 import {
-  addPreferenceController,
+  upsertPreferenceController,
+  updateProfileController,
+  updateStatusController,
   uploadResumeController,
 } from "../modules/user/user.controller.js";
-import { addPreferenceSchema } from "../modules/user/user.validate.js";
+import {
+  updateProfileSchema,
+  updateStatusSchema,
+  upsertPreferenceSchema,
+} from "../modules/user/user.validate.js";
 import { authenticateUser } from "../middleware/auth.js";
 import { getenv } from "../config/env.js";
 
@@ -22,8 +28,22 @@ userRoutes.post(
 );
 
 userRoutes.post(
-  "/add-preference",
+  "/upsert-preference",
   authenticateUser,
-  validate(addPreferenceSchema),
-  addPreferenceController,
+  validate(upsertPreferenceSchema),
+  upsertPreferenceController,
+);
+
+userRoutes.patch(
+  "/update/profile",
+  authenticateUser,
+  validate(updateProfileSchema),
+  updateProfileController,
+);
+
+userRoutes.patch(
+  "/update/status",
+  authenticateUser,
+  validate(updateStatusSchema),
+  updateStatusController,
 );

@@ -102,7 +102,7 @@ export const uploadResumeController = async (req, res) => {
   }
 };
 
-export const addPreferenceController = async (req, res) => {
+export const upsertPreferenceController = async (req, res) => {
   try {
     const userId = req.user._id;
     const { preferences } = req.body;
@@ -118,7 +118,7 @@ export const addPreferenceController = async (req, res) => {
         new: true,
         runValidators: true,
       },
-    ).select("-password");
+    )
 
     return res.status(200).json({
       success: true,
@@ -137,6 +137,75 @@ export const addPreferenceController = async (req, res) => {
   }
 };
 
-const extractResumeContent = async (file) => {
-  return "new things";
+export const updateProfileController = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { $set: req.body },
+      {
+        new: true,
+        runValidators: true,
+      },
+    ).select("-password");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      data: user,
+    });
+  } catch (error) {
+    console.error("updateProfileController error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update profile",
+    });
+  }
+};
+
+export const updateStatusController = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { status } = req.body;
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { $set: { status } },
+      {
+        new: true,
+        runValidators: true,
+      },
+    ).select("-password");
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Status updated successfully",
+      data: {
+        status: user.status,
+      },
+    });
+  } catch (error) {
+    console.error("updateStatusController error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update status",
+    });
+  }
 };
