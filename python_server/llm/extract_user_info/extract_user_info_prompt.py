@@ -1,649 +1,209 @@
 EXTRACT_USER_INFO_PROMPT = """
+You are an expert user-information extraction, validation, and merging system.
 
-You are a highly accurate resume information extraction system.
+Your task is to produce the FINAL UserInformation by checking:
 
-Your ONLY task is to extract the primary person's identity and contact
-information from the provided resume content.
+1. Existing user information
+2. The provided resume
+3. Optional user instruction
 
-The input may contain ONE resume or MULTIPLE resume versions belonging
-to the same person. All resume content is provided as ONE string.
-
-You MUST follow the extraction and validation rules below.
-
-============================================================
-PRIMARY PERSON
-============================================================
-
-Extract information ONLY for the primary person whose resume is being
-provided.
-
-Do NOT extract information belonging to:
-
-- Recruiters
-- Hiring managers
-- Interviewers
-- References
-- Professors
-- Managers
-- Colleagues
-- Clients
-- Companies
-- Organizations
-- Other people mentioned inside the resume
-
-If multiple resume versions clearly belong to the same person, combine
-their information.
-
-If information belongs to different people, DO NOT merge their
-information.
+The goal is to keep existing valid information and add/update information
+when supported by the resume or user instruction.
 
 ============================================================
-VERY IMPORTANT: DO NOT GUESS
+EXISTING USER INFORMATION
 ============================================================
 
-NEVER invent, infer, guess, or fabricate a value.
+{existing_user_info}
 
-Every returned value must be supported by the resume content.
-
-If a field cannot be identified with reasonable confidence,
-return an empty string.
-
-NEVER move a value from one field to another just because another
-field is empty.
-
-For example:
-
-If an email address is found but a portfolio URL is not found:
-
-CORRECT:
-portfolio_url = ""
-email = "person@example.com"
-
-INCORRECT:
-portfolio_url = "person@example.com"
 
 ============================================================
-FULL NAME
-============================================================
-
-Extract the person's full name.
-
-The strongest evidence for the full name is:
-
-1. Name at the beginning/header of the resume.
-2. Name in the contact section.
-3. Name explicitly associated with the resume.
-
-Example:
-
-# Anirban Das
-
-=> full_name = "Anirban Das"
-
-Do NOT use:
-
-- Admission numbers
-- Employee IDs
-- Student IDs
-- Usernames
-- GitHub usernames
-- LinkedIn usernames
-- Names of companies
-- Names of professors
-- Names of recruiters
-- Names mentioned in projects
-
-============================================================
-PHONE
-============================================================
-
-Extract ALL phone numbers that belong to the primary person.
-
-IMPORTANT:
-
-The output MUST be a STRING.
-
-If multiple phone numbers exist, separate them using comma + space.
-
-Example:
-
-"+91 9876543210, +91 9123456789"
-
-DO NOT return an array.
-
-Only extract values that are clearly phone numbers.
-
-Valid phone numbers may contain:
-
-- Country code
-- Spaces
-- Hyphens
-- Parentheses
-- Digits
-
-Examples:
-
-+91 9876543210
-+91-9876543210
-9876543210
-+1 415 555 1234
-
-Do NOT extract:
-
-- Admission numbers
-- Student IDs
-- Employee IDs
-- Roll numbers
-- Application IDs
-- GitHub usernames
-- LeetCode usernames
-- Ratings
-- Random numeric values
-- Dates
-- CGPA
-- Years
-- Company numbers
-- Recruiter phone numbers
-
-IMPORTANT:
-
-A value such as:
-
-23JE0104
-
-is NOT a phone number.
-
-A value such as:
-
-6290375587
-
-may be a phone number if it appears in the person's contact
-information.
-
-============================================================
-EMAIL
-============================================================
-
-Extract ALL email addresses belonging to the primary person.
-
-The output MUST be a STRING.
-
-If multiple emails exist, separate them using comma + space.
-
-Example:
-
-"john@example.com, john.doe@gmail.com"
-
-DO NOT return an array.
-
-An email MUST contain a valid email-like structure:
-
-local-part@domain
-
-For example:
-
-dasanirban268@gmail.com
-
-is an email.
-
-IMPORTANT:
-
-An email address MUST NEVER be returned as:
-
-- linkedin_url
-- github_url
-- portfolio_url
-
-If a value contains "@", it is an email candidate, NOT a URL.
-
-Do NOT extract:
-
-- Recruiter emails
-- Company/general emails
-- Reference emails
-- Emails belonging to other people
-
-============================================================
-LINKEDIN URL
-============================================================
-
-Extract the PRIMARY PERSON'S LinkedIn profile URL.
-
-A valid LinkedIn value must identify LinkedIn.
-
-Examples:
-
-https://www.linkedin.com/in/anirbandas
-
-https://linkedin.com/in/anirbandas
-
-linkedin.com/in/anirbandas
-
-All of the above are valid LinkedIn URLs.
-
-If the protocol is missing, you MAY preserve the URL as it appears
-in the resume.
-
-For example:
-
-linkedin.com/in/anirbandas
-
-is acceptable.
-
-IMPORTANT VALIDATION:
-
-The value MUST contain:
-
-linkedin.com
-
-and preferably:
-
-linkedin.com/in/
-
-Do NOT put these into linkedin_url:
-
-- Email addresses
-- GitHub URLs
-- Portfolio URLs
-- Company URLs
-- Plain usernames unless clearly identified as LinkedIn
-
-If no LinkedIn URL is found:
-
-linkedin_url = ""
-
-============================================================
-GITHUB URL
-============================================================
-
-Extract the PRIMARY PERSON'S GitHub profile URL.
-
-Examples:
-
-https://github.com/anirban2005143a
-
-https://github.com/anirban2005143a/
-
-github.com/anirban2005143a
-
-All are valid GitHub URLs.
-
-IMPORTANT VALIDATION:
-
-The value MUST contain:
-
-github.com
-
-A GitHub URL should normally look like:
-
-github.com/<username>
-
-If the resume contains:
-
-github.com/anirban2005143a
-
-return:
-
-github.com/anirban2005143a
-
-If the resume contains:
-
-https://github.com/anirban2005143a/project
-
-and it is clearly the person's repository, you MAY extract the
-profile URL:
-
-https://github.com/anirban2005143a
-
-IMPORTANT:
-
-Do NOT put these into github_url:
-
-- Email addresses
-- LinkedIn URLs
-- Portfolio URLs
-- GitHub repository URLs belonging to another person
-- Random GitHub links mentioned in job descriptions
-
-If no GitHub URL is found:
-
-github_url = ""
-
-============================================================
-PORTFOLIO URL
-============================================================
-
-Extract the person's PERSONAL PORTFOLIO WEBSITE URL.
-
-This field is ONLY for a personal website/portfolio.
-
-Valid examples:
-
-https://anirban-das-portfolio.vercel.app/
-
-https://anirbandas.dev
-
-https://anirbandas.com
-
-https://anirban.github.io
-
-IMPORTANT VALIDATION:
-
-A portfolio_url MUST be a URL.
-
-It MUST NOT be:
-
-- An email address
-- A phone number
-- A LinkedIn URL
-- A GitHub URL
-- A company website
-- A university website
-- A job board
-- A social media profile
-
-VERY IMPORTANT:
-
-If the value contains "@":
-
-IT IS NOT A PORTFOLIO URL.
-
-For example:
-
-dasanirban268@gmail.com
-
-MUST NEVER be returned as portfolio_url.
-
-If no personal portfolio website is present:
-
-portfolio_url = ""
-
-============================================================
-URL CLASSIFICATION
-============================================================
-
-When extracting URLs, classify them using these rules:
-
-IF value contains:
-"linkedin.com"
-
-=> linkedin_url
-
-IF value contains:
-"github.com"
-
-=> github_url
-
-IF value is a valid HTTP/HTTPS/web URL and is clearly the person's
-personal website/portfolio:
-
-=> portfolio_url
-
-IF value contains "@":
-
-=> email
-
-NEVER assign the same value to multiple fields.
-
-For example:
-
-https://linkedin.com/in/anirbandas
-
-MUST NOT appear in:
-
-github_url
-portfolio_url
-email
-
-Similarly:
-
-dasanirban268@gmail.com
-
-MUST NOT appear in:
-
-linkedin_url
-github_url
-portfolio_url
-
-============================================================
-CONTACT HEADER EXTRACTION
-============================================================
-
-Resume contact information is often written in a compact format.
-
-For example:
-
-Name | phone | email | LinkedIn | GitHub | Portfolio
-
-or:
-
-Name
-phone
-email
-LinkedIn
-GitHub
-portfolio website
-
-Do NOT rely only on the order of these fields.
-
-Instead, classify each candidate using its actual format.
-
-Example:
-
-Anirban Das | 6290375587 | dasanirban268@gmail.com |
-linkedin.com/in/anirbandas |
-github.com/anirban2005143a |
-https://anirban-das-portfolio.vercel.app/
-
-Correct extraction:
-
-full_name:
-"Anirban Das"
-
-phone:
-"6290375587"
-
-email:
-"dasanirban268@gmail.com"
-
-linkedin_url:
-"linkedin.com/in/anirbandas"
-
-github_url:
-"github.com/anirban2005143a"
-
-portfolio_url:
-"https://anirban-das-portfolio.vercel.app/"
-
-============================================================
-MULTIPLE RESUME VERSIONS
-============================================================
-
-The input may contain:
-
-RESUME 1
-RESUME 2
-RESUME 3
-...
-
-These may be different versions of the same person's resume.
-
-If they clearly belong to the same person:
-
-1. Combine their contact information.
-2. Remove duplicate phone numbers.
-3. Remove duplicate email addresses.
-4. Select the best LinkedIn URL.
-5. Select the best GitHub URL.
-6. Select the best personal portfolio URL.
-
-For phone numbers:
-
-If Resume 1 contains:
-
-6290355877
-
-and Resume 2 contains:
-
-6290375587
-
-return:
-
-"6290355877, 6290375587"
-
-For emails:
-
-If Resume 1 contains:
-
-person@gmail.com
-
-and Resume 2 contains:
-
-person@outlook.com
-
-return:
-
-"person@gmail.com, person@outlook.com"
-
-DO NOT merge information belonging to different people.
-
-============================================================
-DEDUPLICATION
-============================================================
-
-Remove exact duplicates.
-
-Example:
-
-Resume 1:
-person@gmail.com
-
-Resume 2:
-person@gmail.com
-
-Output:
-
-"person@gmail.com"
-
-NOT:
-
-"person@gmail.com, person@gmail.com"
-
-Same rule applies to phone numbers.
-
-============================================================
-MISSING VALUES
-============================================================
-
-If information is not present, return:
-
-""
-
-Do NOT use:
-
-null
-None
-N/A
-Not found
-Unknown
-Not available
-
-============================================================
-FIELD TYPE REQUIREMENTS
-============================================================
-
-The output MUST contain exactly these fields:
-
-full_name
-phone
-linkedin_url
-github_url
-portfolio_url
-email
-
-All six fields MUST be strings.
-
-phone:
-comma-separated string if multiple numbers exist.
-
-email:
-comma-separated string if multiple emails exist.
-
-All URL fields:
-single string.
-
-============================================================
-FINAL VALIDATION BEFORE OUTPUT
-============================================================
-
-Before returning the answer, internally validate every field.
-
-CHECK 1:
-Does full_name look like a person's name?
-
-CHECK 2:
-Does phone contain only phone-number candidates?
-
-CHECK 3:
-Does linkedin_url contain "linkedin.com"?
-
-CHECK 4:
-Does github_url contain "github.com"?
-
-CHECK 5:
-Is portfolio_url actually a web URL?
-
-CHECK 6:
-Does portfolio_url NOT contain "@"
-
-CHECK 7:
-Does email contain valid email candidates?
-
-CHECK 8:
-Is the same value incorrectly assigned to multiple fields?
-
-CHECK 9:
-Are duplicate phones removed?
-
-CHECK 10:
-Are duplicate emails removed?
-
-If any field fails validation, correct it before returning the output.
-
-============================================================
-ADDITIONAL USER INSTRUCTION
-============================================================
-
-{user_instruction}
-
-============================================================
-RESUME CONTENT
+RESUME
 ============================================================
 
 {resume_content}
 
+
 ============================================================
-OUTPUT FORMAT
+OPTIONAL USER INSTRUCTION
 ============================================================
+
+{user_instruction}
+
+
+============================================================
+MERGE RULES
+============================================================
+
+- Keep existing valid information.
+- Check the resume for additional information that can be added.
+- Check the user instruction for additional information or corrections.
+- Add new valid information found in the resume or user instruction.
+- If the user instruction explicitly asks to change/update information,
+  follow the instruction when it provides a clear value.
+- Do not invent, guess, or fabricate information.
+- Do not remove valid existing information just because it is absent
+  from the resume.
+- Do not add duplicate values.
+- For phone and email, keep all unique valid values as a
+  comma-separated string.
+- If no valid value exists for a field, return an empty string.
+
+
+============================================================
+FIELD VALIDATION
+============================================================
+
+Every extracted value must actually belong to its field.
+
+full_name:
+- Only the person's actual full name.
+- Do not include job titles, company names, descriptions, emails,
+  phone numbers, or URLs.
+
+phone:
+- Only phone numbers belonging to the person.
+- Multiple phone numbers must be comma-separated.
+- Do not include emails, URLs, or unrelated/company phone numbers.
+
+email:
+- Only email addresses belonging to the person.
+- Multiple email addresses must be comma-separated.
+- Do not include URLs or unrelated/company/recruiter emails unless
+  clearly identified as the person's own email.
+
+linkedin_url:
+- Only the person's LinkedIn profile URL.
+- It must actually be a LinkedIn URL.
+- Do not put email, phone, GitHub, portfolio, or other URLs here.
+
+github_url:
+- Only the person's GitHub profile URL.
+- It must actually be a GitHub URL.
+- Do not put email, phone, LinkedIn, portfolio, or other URLs here.
+
+portfolio_url:
+- Only the person's personal portfolio/personal website URL.
+- Do not put LinkedIn, GitHub, email, phone, company websites,
+  or unrelated websites here.
+
+
+============================================================
+USER INSTRUCTION
+============================================================
+
+The user instruction is optional.
+
+If it is empty, ignore it.
+
+If provided, use it to determine whether information should be added
+or updated.
+
+The instruction may provide a new value, correct existing information,
+or clarify which information from the resume belongs to the user.
+
+Follow explicit user instructions when they provide a clear value.
+
+However, still validate the value against the correct field type.
+
+For example:
+
+User instruction:
+"Add my new email: anirban.work@gmail.com"
+
+Then email should contain:
+"anirban.work@gmail.com"
+
+User instruction:
+"Use this LinkedIn: https://linkedin.com/in/anirban"
+
+Then linkedin_url should contain:
+"https://linkedin.com/in/anirban"
+
+Do not put the instruction itself into a field.
+
+
+============================================================
+VALUE FORMAT
+============================================================
+
+Every field must contain ONLY the actual value.
+
+Never return an explanation, sentence, label, or description.
+
+Examples:
+
+Correct:
+full_name = "Anirban Das"
+
+Wrong:
+full_name = "The user's full name is Anirban Das"
+
+Wrong:
+full_name = "Name: Anirban Das"
+
+
+Correct:
+email = "anirban@gmail.com, anirban.work@gmail.com"
+
+Wrong:
+email = "The user's emails are anirban@gmail.com, anirban.work@gmail.com"
+
+
+Correct:
+linkedin_url = "https://linkedin.com/in/anirban"
+
+Wrong:
+linkedin_url = "The user's LinkedIn is https://linkedin.com/in/anirban"
+
+
+Do not include:
+- field names inside values
+- explanations
+- labels such as "Name:", "Email:", "Phone:", etc.
+- sentences
+- comments
+- prefixes or suffixes
+
+
+============================================================
+FINAL CHECK
+============================================================
+
+Before returning the result, verify every field:
+
+1. Is the value actually for the user?
+2. Does the value belong to the correct field?
+3. Is the value supported by existing information, the resume,
+   or the user instruction?
+4. Is it free from duplicate values?
+5. Does it contain ONLY the actual value?
+6. For URLs, is it actually the correct type of URL?
+7. For phone/email, are multiple values comma-separated?
+
+
+============================================================
+IMPORTANT
+============================================================
+
+Check the semantic meaning and format of every extracted value before
+adding it.
+
+For example:
+
+- An email must be an email, not a URL.
+- A LinkedIn URL must be a LinkedIn profile URL, not merely a URL
+  containing "linkedin" somewhere in text.
+- A GitHub URL must be a GitHub profile URL.
+- A portfolio URL must be a personal website/portfolio, not LinkedIn
+  or GitHub.
+- A phone value must actually be a phone number.
+- A person's name must actually represent the person.
+
+Only merge information when it is reasonably clear that it belongs
+to the user.
+
+Return ONLY the structured UserInformation output.
 
 {format_instructions}
-
-============================================================
-FINAL OUTPUT RULE
-============================================================
-
-Return ONLY the structured output.
-
-Do not provide explanations.
-
-Do not provide reasoning.
-
-Do not provide Markdown.
-
-Do not provide comments.
-
-Do not provide additional fields.
-
-Do not write anything before or after the structured output.
-
 """
