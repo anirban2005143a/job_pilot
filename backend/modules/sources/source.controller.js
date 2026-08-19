@@ -12,6 +12,7 @@ export const registerSource = async (req, res, next) => {
       active,
       max_application_per_hour,
       pollingInterval,
+      implementation
     } = req.body;
 
     // Because `name` is unique, don't allow registration
@@ -33,6 +34,7 @@ export const registerSource = async (req, res, next) => {
       active,
       max_application_per_hour,
       pollingInterval,
+      implementation
     });
 
     const source = await jobSource.register();

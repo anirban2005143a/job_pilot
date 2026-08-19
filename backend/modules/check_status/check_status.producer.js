@@ -25,6 +25,7 @@ const produceStatusJobs = async () => {
         jobId: application.jobId.toString(),
         sourceId: application.sourceId.toString(),
         externalJobId: application.externalJobId.toString(),
+        externalApplicationId: application.externalApplicationId.toString(),
       });
     }
 

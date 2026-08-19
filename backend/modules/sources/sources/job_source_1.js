@@ -3,15 +3,15 @@ import { JobSource } from "../JobSource.js";
 import { Job } from "../../job/job.type.js";
 
 export class JobSource1 extends JobSource {
-  constructor(
+  constructor({
     sourceId,
-    sourceName,
+    source_name,
     base_url,
     max_application_per_hour,
     pollingInterval,
-  ) {
-    if (!sourceId) throw new Error("Job Source must provide a source id");
-    if (!sourceName) throw new Error("Job Source must provide a source name");
+    active,
+  }) {
+    if (!source_name) throw new Error("Job Source must provide a source name");
     if (!base_url) throw new Error("Job Source must provide a base url");
     if (!max_application_per_hour)
       throw new Error(
@@ -23,9 +23,15 @@ export class JobSource1 extends JobSource {
         "Job Source must provide a time interval between two job polling.",
       );
 
-    super(sourceName, max_application_per_hour, pollingInterval);
+    super({
+      source_name,
+      base_url,
+      active,
+      max_application_per_hour,
+      pollingInterval,
+    });
 
-    this.sourceId = sourceId;
+    this.sourceId = sourceId
     this.base_url = base_url;
   }
 

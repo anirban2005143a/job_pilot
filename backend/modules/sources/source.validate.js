@@ -19,6 +19,12 @@ const sourceFields = {
     message: "Active must be a boolean",
   }),
 
+  implementation: z
+    .string()
+    .trim()
+    .min(1, "Source Implementation is required")
+    .max(100, "Source Implementation must not exceed 100 characters"),
+
   max_application_per_hour: z
     .number()
     .int("Max applications per hour must be an integer")

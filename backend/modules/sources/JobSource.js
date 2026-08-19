@@ -8,6 +8,7 @@ export class JobSource {
     active = true,
     max_application_per_hour = 500,
     pollingInterval = 60 * 1000,
+    implementation = null,
   }) {
     if (!source_name) {
       throw new Error("Source name is required");
@@ -18,6 +19,7 @@ export class JobSource {
     this.max_application_per_hour = max_application_per_hour;
     this.pollingInterval = pollingInterval;
     this.sourceId = null;
+    this.implementation = implementation;
   }
 
   getMaxApplicationPerHour() {
@@ -25,6 +27,10 @@ export class JobSource {
   }
 
   async register() {
+    if (!this.implementation) {
+      throw new Error("Implementation is required");
+    }
+
     const source = await Source.findOneAndUpdate(
       { name: this.source_name },
       {
@@ -33,11 +39,13 @@ export class JobSource {
         polling_interval: this.pollingInterval,
         max_applications_per_hour: this.max_application_per_hour,
         active: this.active,
+        implementation: this.implementation,
       },
       {
         upsert: true,
         new: true,
         setDefaultsOnInsert: true,
+        runValidators: true,
       },
     );
 

@@ -29,6 +29,13 @@ const sourceSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+
+    implementation:{
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+    }
   },
   {
     timestamps: true,

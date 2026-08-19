@@ -1,7 +1,6 @@
 import User from "../user/user.model.js";
 import { JobModel } from "../job/job.repository.js";
 import Source from "../sources/source.model.js";
-import { JobSource1 } from "../sources/sources/job_source_1.js";
 
 import { LLMModule } from "../llm/llm.js";
 import { loadResumes } from "../resume/loadResumes.js";
@@ -9,6 +8,10 @@ import { loadResumes } from "../resume/loadResumes.js";
 import { incrementUserApplicationCount } from "../user/utils.js";
 
 import { ApplicationModel } from "./application.model.js";
+import {
+  createJobSourceObject,
+  getSourceImplementation,
+} from "../sources/source.registry.js";
 
 export class ApplyPipeline {
   async process({ jobId, userId }) {
@@ -58,30 +61,29 @@ export class ApplyPipeline {
     }
 
     try {
-      // Create concrete source object
-      const jobSource = new JobSource1(
-        source._id,
-        source.name,
-        source.base_url,
-        source.max_applications_per_hour,
-        source.polling_interval,
-      );
+      // Resolve implementation dynamically
+      const SourceClass = getSourceImplementation(source.implementation);
 
-      console.log(`[Apply Pipeline] Loading user resumes`)
+      // Create the correct source implementation
+      const jobSource = createJobSourceObject(source);
+
+      console.log(`[Apply Pipeline] Loading user resumes`);
       // Load markdown resumes
       const resumes = await loadResumes(user.resumes);
 
       // Generate resume and cover letter
       const llm = new LLMModule(user, job);
 
-      console.log(`[Apply Pipeline] Generating final resume for application`)
+      console.log(`[Apply Pipeline] Generating final resume for application`);
       const generatedResume = await llm.createMultipleResume(resumes);
 
-      console.log(`[Apply Pipeline] Generating cover letter for application`)
+      console.log(`[Apply Pipeline] Generating cover letter for application`);
       const coverLetter = await llm.createCoverLetter(generatedResume, job);
 
       // Apply through source
-      console.log(`[Apply Pipeline] Applying to job ${jobId} for user ${userId}`)
+      console.log(
+        `[Apply Pipeline] Applying to job ${jobId} for user ${userId}`,
+      );
       const response = await jobSource.applyJob({
         job_id: job.jobId,
         user_id: user._id.toString(),
@@ -92,7 +94,7 @@ export class ApplyPipeline {
       });
 
       // Persist application
-      console.log(`[Apply Pipeline] Storing application details in DB`)
+      console.log(`[Apply Pipeline] Storing application details in DB`);
       const application = await ApplicationModel.persistApplication({
         existingApplication,
         userId,
@@ -105,7 +107,7 @@ export class ApplyPipeline {
       });
 
       // Update application count
-      console.log(`[Apply Pipeline] Update user delay apply count`)
+      console.log(`[Apply Pipeline] Update user delay apply count`);
       await incrementUserApplicationCount(User, user);
 
       return application;

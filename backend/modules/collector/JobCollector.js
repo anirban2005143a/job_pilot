@@ -18,7 +18,7 @@ export class JobCollector {
   //source - JobSource object
   registerSource(source) {
     if (!source || !source.source_name) {
-      throw new Error("Invalid job source");
+      throw new Error("Invalid job source class object");
     }
 
     if (this.sources.has(source.source_name)) {
@@ -32,6 +32,9 @@ export class JobCollector {
   //source - JobSource object
   async pollSource(source) {
     try {
+      if (!source.active) {
+        console.log(`[Collector] Job Source: `);
+      }
       const jobs = await source.getJobs();
 
       const newJobs = await this.jobRepository.saveJobs(source.sourceId, jobs);
@@ -56,21 +59,13 @@ export class JobCollector {
 
       const elapsed = Date.now() - startedAt;
       const delay_offset_seconds =
-        Number(getenv("DELAY_OFFSET_SECONDS") || 0) * 1000;
+        Number(getenv("JOB_POOLING_DELAY_OFFSET_SECONDS") || 30) * 1000;
       const delay = Math.max(
         0,
         source.pollingInterval + delay_offset_seconds - elapsed,
       );
 
       await new Promise((resolve) => setTimeout(resolve, delay));
-    }
-  }
-
-  async pushToMatchingQueue(jobs) {
-    for (const job of jobs) {
-      await this.matchingQueue.add("match-job", {
-        jobId: job._id.toString(),
-      });
     }
   }
 
@@ -87,5 +82,13 @@ export class JobCollector {
 
   getSources() {
     return Array.from(this.sources.values());
+  }
+
+  async pushToMatchingQueue(jobs) {
+    for (const job of jobs) {
+      await this.matchingQueue.add("match-job", {
+        jobId: job._id.toString(),
+      });
+    }
   }
 }

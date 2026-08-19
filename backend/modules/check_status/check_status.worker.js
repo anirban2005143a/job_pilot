@@ -4,13 +4,20 @@ import { getenv } from "../../config/env.js";
 import { checkStatusQueue } from "./check_status.queue.js";
 import Source from "../sources/source.model.js";
 import { ApplicationModel } from "../apply/application.model.js";
-import { JobSource1 } from "../sources/sources/job_source_1.js";
+import { createJobSourceObject } from "../sources/source.registry.js";
 
 export const checkStatusWorker = new Worker(
   checkStatusQueue.name,
 
   async (job) => {
-    const { applicationId, userId, jobId, sourceId, externalJobId } = job.data;
+    const {
+      applicationId,
+      userId,
+      jobId,
+      sourceId,
+      externalJobId,
+      externalApplicationId,
+    } = job.data;
 
     console.log(`[Check Status Worker] Checking application: ${applicationId}`);
 
@@ -34,14 +41,11 @@ export const checkStatusWorker = new Worker(
 
     console.log(`[Check Status Worker] Current status: ${application.status}`);
 
-    // Create job source
-    const jobSource = new JobSource1(
-      source._id,
-      source.name,
-      source.base_url,
-      source.max_applications_per_hour,
-      source.polling_interval,
-    );
+    // Resolve implementation dynamically
+    const SourceClass = getSourceImplementation(source.implementation);
+
+    // Create the correct source implementation
+    const jobSource = createJobSourceObject(source);
 
     // Check status from job source
     console.log(`[Check Status Worker] Calling ${source.name} status API...`);

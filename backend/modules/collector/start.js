@@ -6,6 +6,8 @@ import { JobRepository } from "../job/job.repository.js";
 import { matchingQueue } from "../matching/matching.queue.js";
 import { JobSource1 } from "../sources/sources/job_source_1.js";
 import { JobSource } from "../sources/JobSource.js";
+import Source from "../sources/source.model.js";
+import { createJobSourceObject } from "../sources/source.registry.js";
 
 const jobSource1_base_url = getenv("JOBSOURCE1_BASE_URL");
 
@@ -24,27 +26,26 @@ const startCollector = async () => {
 
     const collector = new JobCollector();
 
-    // 3. Register sources
-    const newSource1 = new JobSource(
-      "Job Source 1",
-      jobSource1_base_url,
-      100,
-      2 * 60 * 1000,
-    );
-    await newSource1.register();
+    const sources = await Source.find({
+      active: true,
+    });
 
-    // console.log(`[Collector Module] Newly registered source : `, newSource1)
+    console.log(`[Collector] Found ${sources.length} active source(s)`);
 
-    const jobSource1 = new JobSource1(
-      newSource1.sourceId,
-      newSource1.source_name,
-      newSource1.base_url,
-      newSource1.max_application_per_hour,
-      newSource1.pollingInterval,
-    );
+    for (const source of sources) {
+      try {
+        const jobSource = createJobSourceObject(source);
 
-    //register source to collector
-    collector.registerSource(jobSource1);
+        collector.registerSource(jobSource);
+
+        console.log(`[Collector] Registered source: ${source.name}`);
+      } catch (error) {
+        console.error(
+          `[Collector] Failed to register source "${source.name}":`,
+          error,
+        );
+      }
+    }
 
     // 4. Start continuous polling
     await collector.start();

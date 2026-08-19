@@ -3,8 +3,9 @@ export const validate = (schema) => {
     const result = schema.safeParse(req.body);
 
     if (!result.success) {
+      console.log(result.error.issues[0])
       return res.status(400).json({
-        message: `Validation failed. ${result.error.issues[0].message}` ,
+        message: `Validation failed. ${result.error.issues[0].path[0]} - ${result.error.issues[0].message}` ,
       });
     }
 
