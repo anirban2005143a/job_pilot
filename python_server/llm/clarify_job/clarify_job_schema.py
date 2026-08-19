@@ -24,13 +24,6 @@ class ClarificationPoint(BaseModel):
 
 class JobClarificationResult(BaseModel):
 
-    needs_clarification: bool = Field(
-        description=(
-            "Whether there are important factors the person should "
-            "consider before deciding whether to apply."
-        )
-    )
-
     summary: str = Field(
         description=(
             "A very concise overall summary of the main factors "

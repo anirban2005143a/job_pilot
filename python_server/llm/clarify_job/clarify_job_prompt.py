@@ -75,7 +75,6 @@ OUTPUT STRUCTURE
 
 The response must contain:
 
-- needs_clarification
 - summary
 - clarification_points
 

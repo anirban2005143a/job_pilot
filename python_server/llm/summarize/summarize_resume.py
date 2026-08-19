@@ -13,7 +13,7 @@ load_dotenv()
 
 llm = HuggingFaceEndpoint(
     repo_id="meta-llama/Llama-3.1-8B-Instruct",
-    huggingfacehub_api_token=os.environ["HUGGINGFACEHUB_API_TOKEN"],
+    huggingfacehub_api_token=os.environ["HUGGINGFACEHUB_API_TOKEN5"],
     max_new_tokens=4096,
 )
 
