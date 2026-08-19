@@ -253,3 +253,10 @@ export const updateStatusSchema = z
     status: z.enum(["active", "paused"]),
   })
   .strict();
+
+export const jobDecisionSchema = z
+  .object({
+    jobId: z.string().min(1),
+    decision: z.enum(["apply", "reject"]),
+  })
+  .strict();

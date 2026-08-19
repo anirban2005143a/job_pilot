@@ -1,9 +1,12 @@
-import fs from "fs/promises";
-import path from "path";
-import { getenv } from "../../config/env.js";
+import mongoose from "mongoose";
 import User from "./user.model.js";
+import { getenv } from "../../config/env.js";
 import { ResumeDocument } from "../resume/ResumeDocument.js";
 import { LLMModule } from "../llm/llm.js";
+import { JobModel } from "../job/job.repository.js";
+import { JobMatch } from "../job/jobMatch.model.js";
+import { JobClarification } from "../job/jobClarification.model.js";
+import { schedulerQueue } from "../scheduler/scheduler.queue.js";
 
 const MAX_RESUMES = Number(getenv("MAX_RESUMES") || 0);
 
@@ -206,6 +209,84 @@ export const updateStatusController = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Failed to update status",
+    });
+  }
+};
+
+export const jobDecisionController = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { jobId, decision } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(jobId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid jobId",
+      });
+    }
+
+    const [job, jobMatch, clarification] = await Promise.all([
+      JobModel.findById(jobId),
+      JobMatch.findOne({ jobId, userId }),
+      JobClarification.findOne({ jobId, userId }),
+    ]);
+
+    if (!job) {
+      return res.status(404).json({
+        success: false,
+        message: "Job not found",
+      });
+    }
+
+    if (!jobMatch) {
+      return res.status(404).json({
+        success: false,
+        message: "Job match not found for this user",
+      });
+    }
+    
+    if (jobMatch.result !== "needs_clarification") {
+      return res.status(400).json({
+        success: false,
+        message: "This job does not require clarification",
+      });
+    }
+
+    if (!clarification) {
+      return res.status(400).json({
+        success: false,
+        message: "No clarification decision is pending for this job",
+      });
+    }
+
+    if (decision === "reject") {
+      return res.status(200).json({
+        success: true,
+        message: "Job rejected successfully",
+      });
+    }
+
+    // decision === "apply"
+    await schedulerQueue.add("schedule-job", {
+      jobId: job._id.toString(),
+      userId: userId.toString(),
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Job added to scheduler successfully",
+      data: {
+        jobId: job._id,
+        userId,
+        status: "scheduled",
+      },
+    });
+  } catch (error) {
+    console.error("jobDecisionController error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to process job decision",
     });
   }
 };

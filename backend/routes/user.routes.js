@@ -6,8 +6,10 @@ import {
   updateProfileController,
   updateStatusController,
   uploadResumeController,
+  jobDecisionController,
 } from "../modules/user/user.controller.js";
 import {
+  jobDecisionSchema,
   updateProfileSchema,
   updateStatusSchema,
   upsertPreferenceSchema,
@@ -46,4 +48,11 @@ userRoutes.patch(
   authenticateUser,
   validate(updateStatusSchema),
   updateStatusController,
+);
+
+userRoutes.post(
+  "/job-decision",
+  authenticateUser,
+  validate(jobDecisionSchema),
+  jobDecisionController,
 );
