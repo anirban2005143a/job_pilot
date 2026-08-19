@@ -29,7 +29,7 @@ const produceStatusJobs = async () => {
       });
     }
 
-    console.log("[Check Status Producer] Jobs added successfully");
+    console.log(`[Check Status Producer] ${applications.length} Jobs added successfully`);
   } catch (error) {
     console.error("[Check Status Producer] Error:", error);
   }

@@ -1,6 +1,6 @@
 import { Novu } from "@novu/api";
 import { getenv } from "../../config/env.js";
-import { clarificationEmailTemplate } from "./notification.template.js";
+import { applicationStatusEmailTemplate, clarificationEmailTemplate } from "./notification.template.js";
 
 const novu = new Novu({
   secretKey: getenv("NOVU_SECRET_KEY"),
@@ -45,4 +45,44 @@ export const createClarificationEmail = (data) => {
     );
   }
   return clarificationEmailTemplate(data);
+};
+
+export const createApplicationStatusEmail = (data) => {
+  if (!data || typeof data !== "object") {
+    throw new Error("Application status email template data is required");
+  }
+
+  const requiredFields = [
+    "status",
+    "company",
+    "jobTitle",
+    "message",
+    "jobId",
+    "frontendUrl",
+  ];
+
+  const missingFields = requiredFields.filter(
+    (field) =>
+      data[field] === undefined || data[field] === null || data[field] === "",
+  );
+
+  if (missingFields.length > 0) {
+    throw new Error(
+      `Missing required email template fields: ${missingFields.join(", ")}`,
+    );
+  }
+
+  const normalizedStatus = data.status.toLowerCase();
+
+  if (!["accepted", "rejected"].includes(normalizedStatus)) {
+    throw new Error(
+      `Invalid application status for notification: ${data.status}`,
+    );
+  }
+
+  return applicationStatusEmailTemplate({
+    ...data,
+
+    status: normalizedStatus,
+  });
 };

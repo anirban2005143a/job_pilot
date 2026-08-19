@@ -4,7 +4,9 @@ import { getenv } from "../../config/env.js";
 import { checkStatusQueue } from "./check_status.queue.js";
 import Source from "../sources/source.model.js";
 import { ApplicationModel } from "../apply/application.model.js";
-import { createJobSourceObject, getSourceImplementation } from "../sources/source.registry.js";
+import { createJobSourceObject } from "../sources/source.registry.js";
+import { createApplicationStatusEmail } from "../notification/notification.service.js";
+import { notificationQueue } from "../notification/notification.queue.js";
 
 export const checkStatusWorker = new Worker(
   checkStatusQueue.name,
@@ -39,10 +41,8 @@ export const checkStatusWorker = new Worker(
       throw new Error(`Application not found: ${applicationId}`);
     }
 
-    console.log(`[Check Status Worker] Current status: ${application.status}`);
-
-    // Resolve implementation dynamically
-    const SourceClass = getSourceImplementation(source.implementation);
+    const previousStatus = application.status;
+    console.log(`[Check Status Worker] Current status: ${previousStatus}`);
 
     // Create the correct source implementation
     const jobSource = createJobSourceObject(source);
@@ -75,6 +75,58 @@ export const checkStatusWorker = new Worker(
 
     console.log(
       `[Check Status Worker] Application updated: ${applicationId} -> ${status}`,
+    );
+
+    // Send notification only when status changed to accepted/rejected
+    const normalizedPreviousStatus = previousStatus?.toLowerCase();
+    const normalizedStatus = status.toLowerCase();
+    const statusChanged = normalizedPreviousStatus !== normalizedStatus;
+    const shouldNotify =
+      statusChanged && ["accepted", "rejected"].includes(normalizedStatus);
+
+    if (!shouldNotify) {
+      console.log(
+        `[Check Status Worker] No notification required. Previous: ${previousStatus}, New: ${status}`,
+      );
+      return {
+        applicationId,
+        status,
+      };
+    }
+
+    console.log(
+      `[Check Status Worker] Status changed from ${previousStatus} to ${status}. Preparing notification...`,
+    );
+
+    // Create notification content
+    const isAccepted = normalizedStatus === "accepted";
+    const message = isAccepted
+      ? `Great news! Your application for ${application.jobTitle || "this position"} has been accepted.`
+      : `Your application for ${application.jobTitle || "this position"} has been rejected.`;
+    const subject = isAccepted
+      ? `JobPilot - Application Accepted`
+      : `JobPilot - Application Update`;
+
+    const html = createApplicationStatusEmail({
+      status: normalizedStatus,
+      company: application.company || source.name,
+      jobTitle: application.jobTitle || "Job Application",
+      message,
+      jobId: jobId || application._id.toString(),
+      frontendUrl: getenv("FRONTEND_URL"),
+    });
+
+    await notificationQueue.add("application-status", {
+      notificationType: "status-update",
+      userId,
+      jobId: jobId || application._id.toString(),
+      message,
+      html,
+      subject,
+    });
+
+    console.log(
+      `[Check Status Worker] ${status} notification queued successfully`,
     );
 
     return {
