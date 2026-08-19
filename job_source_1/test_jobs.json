@@ -1,0 +1,94 @@
+[
+  {
+    "id": "job-direct-apply-001",
+    "title": "AI Backend Engineer",
+    "company": "IntelliCloud",
+    "cities": ["Hyderabad", "Chennai"],
+    "countries": ["India"],
+    "is_remote": true,
+    "is_hybride": true,
+    "is_onsite": false,
+    "salary_offered": "₹31,00,000 - ₹43,00,000 per year",
+    "visa_sponsorship_offered": false,
+    "start_date": "2026-10-10",
+    "required_skills": [
+      "Python",
+      "FastAPI",
+      "LangChain",
+      "PostgreSQL",
+      "LLMs",
+      "Docker"
+    ],
+    "description": "Develop production AI services and APIs for an established cloud software company."
+  },
+  {
+    "id": "job-reject-002",
+    "title": "Senior iOS Engineer",
+    "company": "MobileWave",
+    "cities": ["Bengaluru", "Pune"],
+    "countries": ["India"],
+    "is_remote": false,
+    "is_hybride": true,
+    "is_onsite": true,
+    "salary_offered": "₹28,00,000 - ₹38,00,000 per year",
+    "visa_sponsorship_offered": false,
+    "start_date": "2026-09-15",
+    "required_skills": [
+      "Swift",
+      "SwiftUI",
+      "Objective-C",
+      "iOS",
+      "Xcode",
+      "UIKit"
+    ],
+    "description": "Lead development of high-performance native iOS applications for a consumer mobile platform."
+  },
+  {
+    "id": "job-clarification-003",
+    "title": "Machine Learning Engineer",
+    "company": "DataForge AI",
+    "cities": ["Bengaluru"],
+    "countries": ["India"],
+    "is_remote": false,
+    "is_hybride": true,
+    "is_onsite": false,
+    "salary_offered": "₹24,00,000 - ₹36,00,000 per year",
+    "visa_sponsorship_offered": false,
+    "start_date": "2026-09-30",
+    "required_skills": [
+      "Python",
+      "TensorFlow",
+      "Keras",
+      "Deep Learning",
+      "PyTorch",
+      "Kubernetes",
+      "AWS"
+    ],
+    "description": "Build and deploy deep learning models for large-scale machine learning systems. The role requires strong experience with production ML infrastructure and cloud deployment."
+  },
+  {
+  "id": "job-reject-003",
+  "title": "Senior Embedded Systems Engineer",
+  "company": "AutoCore Technologies",
+  "cities": ["Pune", "Bengaluru"],
+  "countries": ["India"],
+  "is_remote": false,
+  "is_hybride": false,
+  "is_onsite": true,
+  "salary_offered": "₹25,00,000 - ₹40,00,000 per year",
+  "visa_sponsorship_offered": false,
+  "start_date": "2026-10-01",
+  "required_skills": [
+    "C",
+    "Embedded C",
+    "C++",
+    "ARM Cortex-M",
+    "RTOS",
+    "CAN Bus",
+    "AUTOSAR",
+    "Microcontrollers",
+    "PCB Debugging"
+  ],
+  "description": "Design and develop safety-critical embedded software for automotive electronic control units. The role requires extensive hands-on experience with microcontrollers, ARM Cortex-M architecture, RTOS, CAN communication, AUTOSAR, and embedded hardware debugging."
+}
+]

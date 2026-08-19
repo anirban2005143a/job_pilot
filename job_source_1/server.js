@@ -7,7 +7,7 @@ app.use(express.json());
 
 const PORT = 5001;
 
-const JOBS_FILE = "./jobs.json";
+const JOBS_FILE = "./test_jobs.json";
 const APPLICATIONS_FILE = "./applications.json";
 const LOGS_FILE = "./logs.txt";
 
@@ -46,13 +46,23 @@ async function addLog(level, event, message, metadata = {}) {
 // -------------------------
 // GET /jobs
 // -------------------------
+function getRandomItems(array, count) {
+  const shuffled = [...array];
+
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+
+  return shuffled.slice(0, count);
+}
 
 app.get("/jobs", async (req, res) => {
   try {
     const jobs = await readJson(JOBS_FILE);
 
     // Pick k random jobs
-    const randomJobs = jobs.sort(() => Math.random() - 0.5).slice(0, 3);
+    const randomJobs = getRandomItems(jobs, 3);
 
     await addLog(
       "INFO",
@@ -149,6 +159,8 @@ app.post("/apply", async (req, res) => {
     // But always return pending to the client
     res.status(201).json({
       application_id: application.application_id,
+      job_id: job_id,
+      user_id: user_id,
       status: "pending",
     });
   } catch (error) {
