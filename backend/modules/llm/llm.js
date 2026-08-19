@@ -3,6 +3,9 @@ import path from "path";
 import axios from "axios";
 import { getenv } from "../../config/env.js";
 import { preferencesToParagraph } from "../user/utils.js";
+
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
 export class LLMModule {
   constructor(user_data, job_data = null) {
     if (!user_data) {
@@ -27,6 +30,7 @@ export class LLMModule {
         user_instruction: user_instruction || "",
       },
     );
+    await sleep(5000)
     return response.data?.summary || "";
   }
 
@@ -128,6 +132,7 @@ export class LLMModule {
       user_instruction: userInstruction,
     });
 
+    await sleep(5000)
     return response.data;
   }
 
@@ -160,6 +165,7 @@ export class LLMModule {
       },
     );
 
+    await sleep(5000)
     return response.data?.resume || "";
   }
 
@@ -226,6 +232,7 @@ export class LLMModule {
       },
     );
 
+    await sleep(5000)
     return response.data?.cover_letter || "";
   }
 
@@ -243,6 +250,7 @@ export class LLMModule {
     },
   );
 
+  await sleep(5000)
   return response.data;
 }
 }
