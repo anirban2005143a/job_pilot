@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../user/user.model.js";
+import { subscribeUserToNovu } from "../notification/notification.service.js";
 
 export const register = async (req, res) => {
   try {
@@ -37,6 +38,8 @@ export const register = async (req, res) => {
         expiresIn: "7d",
       },
     );
+
+    await subscribeUserToNovu(user);
 
     return res.status(200).json({
       message: "Login successful",

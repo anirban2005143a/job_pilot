@@ -6,6 +6,7 @@ import User from "../user/user.model.js";
 import { notificationQueue } from "../notification/notification.queue.js";
 import { JobClarification } from "../job/jobClarification.model.js";
 import { LLMModule } from "../llm/llm.js";
+import { createClarificationEmail } from "../notification/notification.service.js";
 
 export class ClarificationPipeline {
   async process(jobId, userId) {
@@ -103,11 +104,23 @@ export class ClarificationPipeline {
       jobClarification?._id?.toString(),
     );
 
+    const message = `Needs your clarification before proceeding with this job in company ${job.company} and role ${job.title}`;
+    const subject = `JobPilot - Clarification Required | ${job.company} | ${job.title}`;
+    const html = createClarificationEmail({
+      company: job.company,
+      jobTitle: job.title,
+      message,
+      jobId: job._id.toString(),
+      frontendUrl: getenv("FRONTEND_URL"),
+    });
+
     await notificationQueue.add("job-clarification", {
-      type: "clarify",
+      notificationType: "need-clarification",
       userId,
-      jobId,
-      clarificationId: jobClarification._id,
+      jobId: job._id.toString(),
+      message,
+      html,
+      subject,
     });
 
     console.log("[ClarificationPipeline] Notification queued successfully");
