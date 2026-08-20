@@ -354,8 +354,9 @@ async def extract_user_info_endpoint(
         print("[POST /extract-user-info] Calling extract_user_information...")
 
         result = extract_user_information(
-            resume_content=request.resume,
+            resume_content=request.resume_content,
             user_instruction=request.user_instruction,
+            existing_user_info=request.existing_user_info
         )
 
         print(
