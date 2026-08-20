@@ -2,7 +2,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
-import rateLimit from "express-rate-limit"
+import rateLimit from "express-rate-limit";
 import { authRoutes } from "./routes/auth.routes.js";
 import { userRoutes } from "./routes/user.routes.js";
 import { sourceRoutes } from "./routes/source.routes.js";
@@ -10,10 +10,7 @@ import { dashboardRoutes } from "./routes/dashboard.routes.js";
 
 export const app = express();
 
-const allowedOrigins = (
-  process.env.CORS_ORIGIN || process.env.FRONTEND_URL || "http://localhost:3000"
-)
-  .split(",")
+const allowedOrigins = process.env.CORS_ORIGIN.split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
 

@@ -2,7 +2,7 @@ import axios from "axios";
 import FormData from "form-data";
 import { getenv } from "../../config/env.js";
 
-const RESUME_PARSER_URL = getenv("RESUME_PARSER_URL") || "http://localhost:8000";
+const PYTHON_SERVER_BASE_URL = getenv("PYTHON_SERVER_BASE_URL") || "http://localhost:8000";
 
 export const extractResumeContent = async (file) => {
   if (!file) {
@@ -22,7 +22,7 @@ export const extractResumeContent = async (file) => {
 
   try {
     const response = await axios.post(
-      `${RESUME_PARSER_URL}/parse`,
+      `${PYTHON_SERVER_BASE_URL}/parse`,
       formData,
       {
         headers: {
