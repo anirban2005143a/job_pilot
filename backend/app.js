@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -9,10 +10,17 @@ import { dashboardRoutes } from "./routes/dashboard.routes.js";
 
 export const app = express();
 
+const allowedOrigins = (
+  process.env.CORS_ORIGIN || process.env.FRONTEND_URL || "http://localhost:3000"
+)
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 app.use(helmet());
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN?.split(",") || [],
+    origin: allowedOrigins,
     credentials: true,
   }),
 );
@@ -23,7 +31,6 @@ app.use(
   }),
 );
 
-app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

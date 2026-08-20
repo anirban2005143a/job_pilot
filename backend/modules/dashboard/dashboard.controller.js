@@ -315,6 +315,7 @@ export const getJobClarificationsController = async (req, res) => {
 
           summary: 1,
           clarification_points: 1,
+          createdAt: 1,
 
           match_score: "$match.match_score",
           matching_skills: "$match.matching_skills",

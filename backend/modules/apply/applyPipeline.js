@@ -61,13 +61,10 @@ export class ApplyPipeline {
     }
 
     try {
-      // Resolve implementation dynamically
-      const SourceClass = getSourceImplementation(source.implementation);
-
       // Create the correct source implementation
       const jobSource = createJobSourceObject(source);
-
       console.log(`[Apply Pipeline] Loading user resumes`);
+      
       // Load markdown resumes
       const resumes = await loadResumes(user.resumes);
 

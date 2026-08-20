@@ -1,5 +1,8 @@
 import mongoose from "mongoose";
 import User from "./user.model.js";
+import fs from "fs/promises";
+import path from "path";
+import axios from "axios";
 import { getenv } from "../../config/env.js";
 import { ResumeDocument } from "../resume/ResumeDocument.js";
 import { LLMModule } from "../llm/llm.js";
@@ -9,6 +12,93 @@ import { JobClarification } from "../job/jobClarification.model.js";
 import { schedulerQueue } from "../scheduler/scheduler.queue.js";
 
 const MAX_RESUMES = Number(getenv("MAX_RESUMES") || 0);
+
+export const extractUserInfoController = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const user = await User.findById(userId).lean();
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    if (!user.resumes || user.resumes.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No resumes found for user",
+      });
+    }
+
+    const pythonApiUrl =
+      getenv("PYTHON_SERVER_BASE_URL") || "http://localhost:8000";
+
+    let existingUserInfo = {};
+
+    for (const resumePath of user.resumes) {
+      if (!resumePath || !/\.md$/i.test(resumePath)) {
+        continue;
+      }
+
+      const markdownPath = path.resolve(process.cwd(), resumePath);
+
+      try {
+        await fs.access(markdownPath);
+      } catch {
+        continue;
+      }
+
+      const resumeContent = await fs.readFile(markdownPath, "utf-8");
+
+      if (!resumeContent.trim()) {
+        continue;
+      }
+
+      const response = await axios.post(
+        `${pythonApiUrl}/extract-user-info`,
+        {
+          resume_content: resumeContent,
+          existing_user_info: existingUserInfo,
+        },
+        {
+          timeout: 120000,
+        },
+      );
+
+      existingUserInfo = response.data;
+    }
+
+    if (Object.keys(existingUserInfo).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No usable resumes found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: existingUserInfo,
+    });
+  } catch (error) {
+    console.error("extractUserInfoController error:", error);
+
+    if (axios.isAxiosError(error)) {
+      return res.status(502).json({
+        success: false,
+        message: "Failed to extract user information",
+        error: error.response?.data?.detail || error.message,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to extract user information",
+    });
+  }
+};
 
 export const uploadResumeController = async (req, res) => {
   try {

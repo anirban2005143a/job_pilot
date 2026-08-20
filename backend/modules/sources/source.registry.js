@@ -24,6 +24,8 @@ export const getSourceImplementation = (implementation) => {
   return SourceClass;
 };
 
+
+//source - a mongodb object
 export const createJobSourceObject = (source) => {
   const SourceClass = sourceImplementations[source.implementation];
 

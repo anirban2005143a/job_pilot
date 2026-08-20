@@ -5,8 +5,9 @@ import { LLMModule } from "../llm/llm.js";
 import { schedulerQueue } from "../scheduler/scheduler.queue.js";
 import { clarificationQueue } from "../needsClarification/clarification.queue.js";
 import { JobMatch } from "../job/jobMatch.model.js";
+import { getenv } from "../../config/env.js";
 
-const limit = pLimit(5);
+const limit = pLimit(Number(getenv("CONCUREENT_USER_IN_MATCHTING") || 2));
 
 export class MatchingPipeline {
   constructor() {

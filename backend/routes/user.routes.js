@@ -7,6 +7,7 @@ import {
   updateStatusController,
   uploadResumeController,
   jobDecisionController,
+  extractUserInfoController,
 } from "../modules/user/user.controller.js";
 import {
   jobDecisionSchema,
@@ -21,6 +22,11 @@ export const userRoutes = express.Router();
 const MAX_RESUMES = Number(getenv("MAX_RESUMES") || 0);
 
 // console.log("from env file MAX_RESUMES ", MAX_RESUMES)
+userRoutes.get(
+  "/extract-user-info",
+  authenticateUser,
+  extractUserInfoController,
+);
 
 userRoutes.post(
   "/upload-resume",
