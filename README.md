@@ -56,6 +56,35 @@ The important architectural boundaries are:
 
 ---
 
+## Table of Contents
+
+- [JobPilot](#jobpilot)
+- [2. High-Level Architecture](#2-high-level-architecture)
+- [3. Repository Structure](#3-repository-structure)
+- [4. Core Technologies](#4-core-technologies)
+- [5. End-to-End Job Lifecycle](#5-end-to-end-job-lifecycle)
+- [6. Major Backend Modules](#6-major-backend-modules)
+- [7. Queue-Based Architecture](#7-queue-based-architecture)
+- [8. Data Model Overview](#8-data-model-overview)
+- [9. Job Source Abstraction](#9-job-source-abstraction)
+- [10. Matching and Decision Flow](#10-matching-and-decision-flow)
+- [11. Scheduling and Rate Limiting](#11-scheduling-and-rate-limiting)
+- [12. Application Flow](#12-application-flow)
+- [13. Resume and AI Services](#13-resume-and-ai-services)
+- [14. Frontend ↔ Backend Communication](#14-frontend-backend-communication)
+- [15. Environment Configuration](#15-environment-configuration)
+- [16. Running the System](#16-running-the-system)
+- [17. Starting the Workers](#17-starting-the-workers)
+- [18. Recommended Local Runtime](#18-recommended-local-runtime)
+- [19. Testing](#19-testing)
+- [20. Reliability and Recovery](#20-reliability-and-recovery)
+- [21. Adding a New Job Source](#21-adding-a-new-job-source)
+- [22. Important Design Boundaries](#22-important-design-boundaries)
+- [23. Failure Scenarios](#23-failure-scenarios)
+- [24. Scaling Considerations](#24-scaling-considerations)
+- [25. Common Debugging Order](#25-common-debugging-order)
+- [26. Architecture Summary](#26-architecture-summary)
+
 # 2. High-Level Architecture
 
 JobPilot currently consists of three main runtime areas plus supporting infrastructure.
