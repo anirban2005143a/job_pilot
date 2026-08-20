@@ -1,177 +1,103 @@
 # JobPilot
 
-JobPilot is a modular, asynchronous job-automation platform that covers the complete job-search and application lifecycle:
+JobPilot is a modular job-automation platform designed to continuously collect jobs from external job sources, understand a user's resume and preferences, identify suitable opportunities, schedule applications according to user/source limits, generate application material with an LLM, submit applications through job sources, and monitor application status.
 
-**Job Sources → Collection → Matching → Clarification → Scheduling → Application → Status Tracking → Notifications**
-
-The project is intentionally split into independent services, domain modules, queues, and workers so that long-running operations do not block the main API server and individual parts can be developed, restarted, tested, and scaled independently.
-
-The repository currently contains:
-
-- A **Next.js frontend**
-- A **Node.js/Express backend**
-- A **Python/FastAPI AI service**
-- A standalone **mock job-source server** for development and testing
-- Independent BullMQ workers for collection, matching, clarification, scheduling, application, status checking, notifications, and recovery
+The system is organized around independent modules and asynchronous workers so that job collection, matching, scheduling, application, status checking, notifications, clarification, and recovery can operate without tightly coupling long-running work to the main API server.
 
 ---
 
-## 1. Architecture at a Glance
+## 1. What JobPilot Does
+
+JobPilot treats automated job applications as a pipeline rather than a single request.
 
 ```text
-                         ┌─────────────────────┐
-                         │     Next.js UI      │
-                         │      Frontend       │
-                         └──────────┬──────────┘
-                                    │ HTTP
-                                    ▼
-                         ┌─────────────────────┐
-                         │   Node / Express    │
-                         │      API Server     │
-                         └──────────┬──────────┘
-                                    │
-                 ┌──────────────────┼──────────────────┐
-                 │                  │                  │
-                 ▼                  ▼                  ▼
-             MongoDB              Redis          Python AI Service
-          Durable state       Queues / state      FastAPI / LLM
-                 ▲                  │
-                 │                  │
-                 │       ┌──────────┴──────────┐
-                 │       │                     │
-                 │       ▼                     ▼
-                 │   Matching Queue       Scheduler Queue
-                 │       │                     │
-                 │       ▼                     ▼
-                 │   Matching Worker      Scheduler Worker
-                 │       │                     │
-                 │       ├── Reject             ▼
-                 │       ├── Match          Apply Queue
-                 │       └── Clarification      │
-                 │              │               ▼
-                 │              ▼          Apply Worker
-                 │       Clarification           │
-                 │          Queue                 ▼
-                 │              │             Application
-                 │              ▼                 │
-                 │       Clarification           ▼
-                 │          Worker          Status Queue
-                 │                              │
-                 │                              ▼
-                 │                         Status Worker
-                 │                              │
-                 │                              ▼
-                 │                      Notification Queue
-                 │
-                 └──── Collector ◄──── Job Sources
+Job Sources
+    │
+    ▼
+Job Collector
+    │
+    ▼
+Job Storage
+    │
+    ▼
+Matching
+    │
+    ├── Not suitable ───────────────► Stop
+    │
+    ├── Needs clarification ────────► Clarification Flow
+    │
+    ▼
+Scheduler
+    │
+    ▼
+Apply Queue
+    │
+    ▼
+Application Pipeline
+    │
+    ├── Resume / Cover Letter generation
+    ├── Application submission
+    └── Application record
+    │
+    ▼
+Status Checking
+    │
+    ▼
+Notifications
 ```
 
-The key architectural principle is that each stage owns one responsibility:
+The important architectural boundaries are:
 
-- **Collector** collects and normalizes jobs.
-- **Matching** decides whether a job is suitable.
-- **Clarification** handles uncertain cases.
-- **Scheduler** decides *when* an eligible application may run.
-- **Apply** decides *how* to perform the application.
-- **Status** monitors applications after submission.
-- **Notification** communicates important events.
-- **Recovery** brings missed jobs back into the normal pipeline.
+- The collector does not decide whether a job is suitable.
+- Matching does not decide when an application should be submitted.
+- Scheduling does not perform the actual application.
+- The apply worker does not need to know how a job was originally collected.
+- The API server does not have to perform expensive operations synchronously.
 
 ---
 
-## 2. Main Components
+# 2. High-Level Architecture
 
-### Frontend
-
-The frontend is a **Next.js 16 + React 19** application.
-
-Location:
-
-```text
-frontend/
-└── src/
-    ├── app/
-    │   ├── applied-jobs/
-    │   ├── clarifications/
-    │   ├── login/
-    │   ├── signup/
-    │   ├── page.tsx
-    │   ├── layout.tsx
-    │   └── globals.css
-    ├── components/
-    │   ├── ui/
-    │   ├── HomeView.tsx
-    │   ├── JobSplitView.tsx
-    │   ├── LoginForm.tsx
-    │   ├── SignupLayout.tsx
-    │   └── providers.tsx
-    └── lib/
-        ├── api.ts
-        ├── dashboard-types.ts
-        ├── store.ts
-        └── types.ts
-```
-
-The frontend provides the user-facing layer for authentication, dashboard/job views, applied jobs, clarifications, and interaction with the backend API.
-
-Important frontend technologies include:
-
-- Next.js
-- React
-- Redux Toolkit / React Redux
-- Tailwind CSS
-- Radix UI
-- React Markdown
-- jsPDF
-- Lucide icons
-- React Toastify
-
-The frontend talks to the Node backend through the configured API URL.
-
----
+JobPilot currently consists of three main runtime areas plus supporting infrastructure.
 
 ### Node.js Backend
 
-Location:
+`backend/` contains:
 
-```text
-backend/
-```
+- HTTP API
+- Authentication
+- MongoDB access
+- User and job models
+- Source management
+- Job collection
+- Matching orchestration
+- Scheduling
+- Application processing
+- Application status processing
+- Notifications
+- Recovery processing
 
-The backend is built with:
+The backend uses Express and is organized into domain-oriented modules.
 
-- Node.js
-- Express 5
-- MongoDB + Mongoose
-- Redis
-- BullMQ
-- Axios
-- JWT
-- bcrypt
-- Zod
-- Multer
-- Helmet
-- CORS
-- express-rate-limit
-- p-limit
+### Frontend
 
-The backend is the main orchestration layer. It exposes the HTTP API and coordinates persistent data, queues, workers, job sources, scheduling, applications, and the Python AI service.
+`frontend/` contains the Next.js/React web application used to interact with JobPilot.
 
----
+It provides the user-facing layer for areas such as:
+
+- Authentication
+- Dashboard/job views
+- Applied jobs
+- Clarifications
+- User interaction with the backend API
+
+The frontend communicates with the Node.js API rather than directly communicating with individual workers.
 
 ### Python AI Service
 
-Location:
+`python_server/` contains a FastAPI service responsible for AI-heavy and document-processing operations.
 
-```text
-python_server/
-```
-
-The Python service is a **FastAPI** application.
-
-It is responsible for AI/document-heavy operations rather than general business orchestration.
-
-Current responsibilities include:
+It currently exposes functionality for:
 
 - PDF resume parsing
 - Resume summarization
@@ -180,56 +106,15 @@ Current responsibilities include:
 - Resume generation
 - Cover-letter generation
 
-Important endpoints include:
+### Job Source Test Server
 
-```text
-GET  /
-POST /parse
-POST /summarize-resume
-POST /match-job
-POST /clarify-job
-POST /create-resume
-POST /create-cover-letter
-```
+`job_source_1/` is a standalone Express-based mock job source.
 
-The root endpoint can be used as a simple health check.
-
-This separation keeps model/document-processing concerns out of the Node.js queue and API orchestration code.
+It provides a controlled environment for developing and testing the source abstraction and application workflow without depending on a real job platform.
 
 ---
 
-### Mock Job Source
-
-Location:
-
-```text
-job_source_1/
-```
-
-This is a standalone Express server that behaves like an external job platform.
-
-It is useful for development because the rest of JobPilot can be tested without depending on a real job platform.
-
-It maintains:
-
-```text
-jobs.json
-applications.json
-logs.txt
-```
-
-It can therefore simulate:
-
-- Job collection
-- Application submission
-- Application state
-- Request logging
-
-It also contains source-level tests.
-
----
-
-## 3. Repository Structure
+# 3. Repository Structure
 
 ```text
 job_pilot/
@@ -265,13 +150,14 @@ job_pilot/
 │   │   └── user/
 │   ├── routes/
 │   ├── uploads/
+│   │   └── resumes/
 │   ├── app.js
 │   ├── server.js
 │   └── package.json
 │
 ├── job_source_1/
-│   ├── jobs.json
 │   ├── applications.json
+│   ├── jobs.json
 │   ├── logs.txt
 │   ├── server.js
 │   ├── server.test.js
@@ -284,267 +170,221 @@ job_pilot/
     └── server.py
 ```
 
+The backend is intentionally separated by business responsibility.
+
 ---
 
-# 4. End-to-End Job Lifecycle
+# 4. Core Technologies
 
-A job should be understood as moving through a series of independent pipelines.
+| Technology | Purpose |
+|---|---|
+| Node.js | Backend runtime |
+| Express 5 | HTTP API |
+| MongoDB | Persistent application data |
+| Mongoose | MongoDB modeling/access |
+| Redis | Scheduling state and queue infrastructure |
+| BullMQ | Background queues/workers |
+| Axios | HTTP communication |
+| JWT | Authentication |
+| bcrypt | Password hashing |
+| Zod | Validation |
+| Multer | Resume/file uploads |
+| Helmet | HTTP security headers |
+| CORS | Cross-origin handling |
+| express-rate-limit | API rate limiting |
+| p-limit | Concurrency control |
+| dotenv | Environment configuration |
+| Next.js / React | Frontend |
+| FastAPI | Python AI service |
+| PyMuPDF / pymupdf4llm | PDF processing |
 
-## 4.1 Collection
+---
 
-The collector discovers enabled job sources and asks each source for jobs.
+# 5. End-to-End Job Lifecycle
+
+This is the core JobPilot flow.
+
+## Step 1 — Collection
+
+A source is configured and enabled.
+
+The collector communicates with the source through the `JobSource` abstraction, retrieves jobs, normalizes them into the application's internal representation, stores them in MongoDB, and triggers downstream processing where appropriate.
 
 ```text
-External Job Platform
-        │
-        ▼
-    JobSource
-        │
-        ▼
+External Source
+      │
+      ▼
+JobSource abstraction
+      │
+      ▼
 Normalized Job
-        │
-        ▼
-    MongoDB
-        │
-        ▼
- Matching Queue
+      │
+      ▼
+MongoDB
 ```
 
-The important point is that platform-specific formats are converted into a common internal job representation.
-
-The collector does **not** decide whether the job is good for a user and does not perform applications.
+The collector is not responsible for matching or application policy.
 
 ---
 
-## 4.2 Matching
+## Step 2 — Matching
 
-The matching worker consumes jobs from the matching queue.
+New jobs enter the matching pipeline.
 
-It combines information such as:
+The matching stage considers:
 
-- User profile
-- Resume
+- User resume/profile
 - User preferences
 - Job requirements
-- AI matching result
+- AI matching
 
-The result is conceptually one of:
-
-```text
-REJECT
-MATCH
-NEEDS_CLARIFICATION
-```
-
-A match does **not** mean "apply immediately".
-
-It only means that the job is eligible to continue.
+The result determines whether the job is:
 
 ```text
-New Job
-   │
-   ▼
-Matching Queue
-   │
-   ▼
-Matching Worker
-   │
-   ▼
-Matching Pipeline
-   │
-   ├── Reject
-   │
-   ├── Match ───────────────► Scheduler
-   │
-   └── Needs Clarification ─► Clarification Queue
+Relevant
+Not suitable
+Potentially relevant → Needs clarification
 ```
+
+A match does **not** mean "apply immediately."
+
+It means the job is eligible to proceed to scheduling.
 
 ---
 
-## 4.3 Clarification
+## Step 3 — Clarification
 
-Some jobs cannot be safely accepted or rejected using the available information.
+Some jobs cannot safely be accepted or rejected from the available information.
 
-Instead of making an uncertain automatic decision, JobPilot sends them through a separate clarification pipeline.
+Those jobs enter the clarification pipeline.
 
 ```text
-Needs Clarification
-        │
-        ▼
-Clarification Queue
-        │
-        ▼
-Clarification Worker
-        │
-        ▼
-Clarification Data
-        │
-        ▼
-Frontend / User Interaction
+Matching
+   │
+   └── Needs clarification
+             │
+             ▼
+      Clarification Queue
+             │
+             ▼
+      Clarification Worker
 ```
 
-This creates a clean extension point for human-in-the-loop behaviour.
+This keeps uncertain decisions separate from the normal application path and provides a clear extension point for user interaction.
 
 ---
 
-## 4.4 Scheduling
+## Step 4 — Scheduling
 
 A suitable job is not necessarily applied immediately.
 
-The scheduler evaluates operational constraints such as:
+The scheduler checks:
 
-### User constraints
-
-- Active/inactive state
-- Daily application limit
-- Current daily application count
-- Daily reset
+- Whether the user is active
+- User daily application limit
+- User's current daily application count
+- User reset time
 - Minimum interval between applications
-- Already scheduled applications
+- Whether the source is active
+- Source hourly application limit
+- Already-reserved future application slots
 
-### Source constraints
-
-- Active/inactive state
-- Maximum applications per hour
-- Already reserved future application slots
-
-The scheduler calculates the earliest valid time.
-
-Conceptually:
+The scheduler calculates the earliest valid time and places the application in the apply queue with a delay.
 
 ```text
-finalTime =
-    max(
-        currentTime,
-        userNextAvailableTime,
-        sourceNextAvailableTime
-    )
-```
-
-Future source reservations are maintained in Redis. This is important because scheduled-but-not-yet-executed applications must still count against source capacity.
-
-The scheduler answers:
-
-> **When should this application happen?**
-
-It does not perform the application.
-
----
-
-## 4.5 Application
-
-Once the scheduler has selected a valid time, the application is placed in the apply queue.
-
-```text
+Matched Job
+    │
+    ▼
 Scheduler
     │
-    ▼
-Apply Queue
+    ├── User constraints
+    ├── Source constraints
+    └── Redis reservations
     │
     ▼
-Apply Worker
+Final scheduled time
     │
     ▼
-Apply Pipeline
-    │
-    ├── Load User
-    ├── Load Job
-    ├── Load Source
-    ├── Prepare Application Data
-    ├── Generate / Load Resume
-    ├── Generate / Load Cover Letter
-    ├── Submit to Source
-    └── Persist Application Result
+Apply Queue (delayed)
 ```
-
-The source-specific application behaviour is delegated to the selected `JobSource` implementation.
-
-This means the generic application pipeline does not need to know how every job platform works.
-
-The apply module answers:
-
-> **How should the application be performed now?**
 
 ---
 
-## 4.6 Status Checking
+## Step 5 — Application
+
+When the delayed job becomes available, the apply worker processes it.
+
+The application pipeline:
+
+1. Loads the required user/job/source data.
+2. Prepares application information.
+3. Generates or obtains required application material.
+4. Communicates with the selected job source.
+5. Records the application outcome.
+
+```text
+Scheduled Apply Job
+       │
+       ▼
+Apply Queue
+       │
+       ▼
+Apply Worker
+       │
+       ▼
+Application Pipeline
+       │
+       ├── Load user
+       ├── Load job
+       ├── Load source
+       ├── Prepare application data
+       ├── Resume / cover letter
+       ├── Submit to source
+       └── Persist application result
+```
+
+The source-specific submission behaviour is delegated to the source implementation.
+
+---
+
+## Step 6 — Status Checking
 
 Application submission and application monitoring are separate.
 
-The status pipeline periodically checks existing application records.
-
 ```text
-Application
-    │
-    ▼
+Application Records
+       │
+       ▼
 Status Producer
-    │
-    ▼
+       │
+       ▼
 Status Queue
-    │
-    ▼
+       │
+       ▼
 Status Worker
-    │
-    ▼
+       │
+       ▼
 Job Source
-    │
-    ▼
-Updated Application Status
+       │
+       ▼
+Updated Application
 ```
 
-This prevents status checking from blocking new applications.
+This allows status checking to run independently of new applications.
 
 ---
 
-## 4.7 Notifications
+## Step 7 — Notifications
 
-Notifications have their own queue and worker.
+Important events can enter the notification queue.
 
-This means a temporary notification problem does not need to make the underlying business operation fail.
-
-The notification system can evolve independently of:
-
-- Matching
-- Scheduling
-- Applying
-- Status checking
+Notification delivery is intentionally separated from the main business pipeline so a notification problem does not have to become the source of truth for application state.
 
 ---
 
-## 4.8 Old Job Recovery
+# 6. Major Backend Modules
 
-A job may be collected while a user is inactive or paused.
-
-Without recovery, that job could remain in MongoDB without ever entering the user's normal matching/application flow.
-
-The recovery worker periodically looks back over a configurable historical window and re-enters eligible jobs into normal processing.
-
-```text
-Previously Collected Jobs
-          │
-          ▼
-Historical Window
-          │
-          ▼
-Find Missed User/Job Combinations
-          │
-          ▼
-Matching
-          │
-          ▼
-Scheduling
-          │
-          ▼
-Apply
-```
-
-This makes temporary inactivity recoverable rather than permanently losing opportunities.
-
----
-
-# 5. Backend Modules
-
-## API Layer
+## 6.1 API Layer
 
 Location:
 
@@ -554,14 +394,9 @@ backend/server.js
 backend/routes/
 ```
 
-Responsibilities:
+`app.js` assembles the Express application, middleware, and routes.
 
-- HTTP requests
-- Authentication
-- Validation
-- Route dispatch
-- Invoking domain modules
-- Returning responses
+`server.js` starts the backend runtime and initializes required services.
 
 Current route groups include:
 
@@ -571,13 +406,11 @@ Current route groups include:
 /user
 ```
 
-Routes should stay relatively thin. Business logic belongs in the corresponding domain modules.
-
-Long-running work should normally be delegated to queues/workers instead of being performed synchronously inside an HTTP request.
+Routes should remain relatively thin; domain modules contain business logic.
 
 ---
 
-## Authentication
+## 6.2 Authentication
 
 Location:
 
@@ -585,17 +418,17 @@ Location:
 backend/modules/auth/
 ```
 
-Handles:
+Main responsibilities:
 
-- User authentication
+- Authentication
 - Credential validation
 - Password handling
-- JWT-based authentication
+- Token-based authentication
 - Authentication input validation
 
 ---
 
-## User
+## 6.3 User Module
 
 Location:
 
@@ -603,23 +436,54 @@ Location:
 backend/modules/user/
 ```
 
-The user is central to the automation pipeline.
+The user module represents the owner of the automation configuration.
 
-User information influences:
+User information affects:
 
-- Resume/profile
-- Preferences
-- Active/inactive state
-- Application limits
-- Application counters
-- Matching
-- Scheduling
+```text
+User
+ ├── Resume
+ ├── Preferences
+ ├── Status
+ ├── Application limits
+ ├── Application counters
+ └── Matching information
+```
 
-An inactive user should not receive new scheduled applications.
+The user's active/inactive state is also used by scheduling.
 
 ---
 
-## Job
+## 6.4 Source Module
+
+Location:
+
+```text
+backend/modules/sources/
+```
+
+Important files:
+
+```text
+JobSource.js
+source.model.js
+sources/
+```
+
+The source abstraction separates JobPilot from platform-specific behaviour.
+
+A source has its own:
+
+- Identity
+- Active/inactive state
+- Application limits
+- Source-specific implementation
+
+The rest of the backend works through the abstraction instead of depending directly on a specific platform.
+
+---
+
+## 6.5 Job Module
 
 Location:
 
@@ -627,22 +491,26 @@ Location:
 backend/modules/job/
 ```
 
-The job module represents normalized job data and related records.
-
-Conceptually:
+Important pieces include:
 
 ```text
-Job
- ├── Source
- ├── Job Match
- └── Job Clarification
+job.repository.js
+job.type.js
+jobClarification.model.js
+jobMatch.model.js
 ```
 
-The repository layer provides a clean boundary between business logic and MongoDB access.
+The job module represents normalized job data and related records:
+
+- Jobs
+- Job matches
+- Job clarification information
+
+The repository layer provides a boundary between application logic and MongoDB access.
 
 ---
 
-## Collector
+## 6.6 Collector Module
 
 Location:
 
@@ -650,20 +518,27 @@ Location:
 backend/modules/collector/
 ```
 
-Main responsibilities:
+Important files:
 
-1. Find enabled sources
-2. Communicate with sources
-3. Retrieve jobs
-4. Normalize jobs
-5. Persist jobs
-6. Trigger downstream processing
+```text
+JobCollector.js
+start.js
+```
 
-The collector intentionally does not contain matching or application policy.
+Responsibilities:
+
+1. Identify enabled sources.
+2. Communicate with the source abstraction.
+3. Retrieve jobs.
+4. Normalize jobs.
+5. Persist them.
+6. Trigger downstream processing where appropriate.
+
+It does not own matching or application policy.
 
 ---
 
-## Resume
+## 6.7 Resume Module
 
 Location:
 
@@ -671,24 +546,25 @@ Location:
 backend/modules/resume/
 ```
 
-The Node layer manages resume representation and orchestration.
+The Node side manages resume representation and extraction/orchestration.
 
-PDF/document-heavy processing is delegated to Python.
+PDF parsing and AI-heavy processing are delegated to Python.
 
 ```text
 Node.js
    │
+   ├── Resume storage/organization
+   │
    ▼
 Python AI Service
-   │
    ├── PDF parsing
-   ├── Content extraction
+   ├── Document processing
    └── AI processing
 ```
 
 ---
 
-## LLM
+## 6.8 LLM Module
 
 Location:
 
@@ -696,13 +572,13 @@ Location:
 backend/modules/llm/
 ```
 
-This acts as the Node-side integration boundary for AI operations.
+This module acts as the Node-side integration boundary for AI operations.
 
-Keeping AI access behind a dedicated module prevents model/provider logic from spreading across unrelated modules.
+It keeps LLM/model-specific logic from spreading across unrelated business modules.
 
 ---
 
-## Matching
+## 6.9 Matching Module
 
 Location:
 
@@ -710,7 +586,7 @@ Location:
 backend/modules/matching/
 ```
 
-Important pieces include:
+Important files:
 
 ```text
 MatchingPipeline.js
@@ -719,11 +595,28 @@ matching.worker.js
 start.js
 ```
 
-The queue/worker architecture allows many jobs to be processed asynchronously without blocking the API or collector.
+The matching stage is asynchronous.
+
+```text
+New Job
+  │
+  ▼
+Matching Queue
+  │
+  ▼
+Matching Worker
+  │
+  ▼
+Matching Pipeline
+  │
+  ├── Suitable
+  ├── Not Suitable
+  └── Needs Clarification
+```
 
 ---
 
-## Needs Clarification
+## 6.10 Clarification Module
 
 Location:
 
@@ -731,7 +624,7 @@ Location:
 backend/modules/needsClarification/
 ```
 
-Important pieces include:
+Important files:
 
 ```text
 ClarificationPipeline.js
@@ -740,11 +633,11 @@ clarification.worker.js
 start.js
 ```
 
-This is the asynchronous path for uncertain matching decisions.
+It provides the asynchronous path for jobs requiring additional interpretation.
 
 ---
 
-## Scheduler
+## 6.11 Scheduler Module
 
 Location:
 
@@ -752,7 +645,7 @@ Location:
 backend/modules/scheduler/
 ```
 
-Important pieces include:
+Important files:
 
 ```text
 schedulerPipeline.js
@@ -761,13 +654,52 @@ scheduler.worker.js
 start.js
 ```
 
-The scheduler is the policy engine for application timing.
+The scheduler is the policy engine for deciding **when** an application can happen.
 
-It does not submit applications.
+### User constraints
+
+- Active/inactive state
+- Daily application limit
+- Current daily application count
+- Reset time
+- Minimum interval between scheduled applications
+
+### Source constraints
+
+- Active/inactive state
+- Maximum applications per hour
+
+### Redis scheduling state
+
+Redis maintains shared scheduling information such as:
+
+- User's last scheduled time
+- Future source application reservations
+
+Reservations matter because scheduled-but-not-yet-executed applications must count toward source capacity.
+
+Conceptually:
+
+```text
+User available time
+        │
+        ├──────────────┐
+        │              │
+Source available time │
+        │              │
+        └──────┬───────┘
+               ▼
+       Maximum of constraints
+               │
+               ▼
+        Final scheduled time
+```
+
+The scheduler then adds the application to the apply queue with the calculated delay.
 
 ---
 
-## Apply
+## 6.12 Apply Module
 
 Location:
 
@@ -775,7 +707,7 @@ Location:
 backend/modules/apply/
 ```
 
-Important pieces include:
+Important files:
 
 ```text
 application.model.js
@@ -785,11 +717,26 @@ applyPipeline.js
 start.js
 ```
 
-The apply pipeline executes the application after the scheduler has selected a valid time.
+Responsibilities include:
+
+- Loading user/job/source data
+- Preparing application information
+- Generating/obtaining application material
+- Communicating with the job source
+- Recording application state
+- Handling application outcomes
+
+The architectural distinction is:
+
+```text
+Scheduler = "When should this happen?"
+
+Apply     = "Perform the application now."
+```
 
 ---
 
-## Check Status
+## 6.13 Application Status Module
 
 Location:
 
@@ -797,7 +744,7 @@ Location:
 backend/modules/check_status/
 ```
 
-Important pieces include:
+Important files:
 
 ```text
 check_status.producer.js
@@ -806,11 +753,11 @@ check_status.worker.js
 start.js
 ```
 
-This pipeline monitors submitted applications independently.
+This is an independent asynchronous pipeline for monitoring submitted applications.
 
 ---
 
-## Notification
+## 6.14 Notification Module
 
 Location:
 
@@ -818,21 +765,13 @@ Location:
 backend/modules/notification/
 ```
 
-Important pieces include:
+The notification system has its own queue infrastructure.
 
-```text
-notification.queue.js
-notification.service.js
-notification.template.js
-notification.worker.js
-start.js
-```
-
-Notification delivery is intentionally isolated from the core business pipeline.
+This isolates delivery failures from the core job/application state.
 
 ---
 
-## Old Job Recovery
+## 6.15 Old Job Recovery Module
 
 Location:
 
@@ -840,73 +779,92 @@ Location:
 backend/modules/oldJobRecovery/
 ```
 
-The recovery worker looks for jobs that were missed while a user was inactive and puts eligible work back into the normal processing path.
+Worker:
 
-The recovery period is configuration-driven.
+```text
+oldJobRecovery.worker.js
+```
+
+A job may have been collected while a user was paused/inactive. It can therefore exist in MongoDB without having gone through that user's normal matching/application flow.
+
+The recovery worker periodically looks back over a configured historical interval and identifies jobs that should be reprocessed for users who are now eligible.
+
+```text
+Previously collected jobs
+        │
+        ▼
+Historical window
+        │
+        ▼
+Find missed user/job combinations
+        │
+        ▼
+Re-enter normal processing
+        │
+        ▼
+Matching → Scheduling → Apply
+```
+
+The historical window is configuration-driven.
 
 ---
 
-# 6. Queue-Based Architecture
+# 7. Queue-Based Architecture
 
-JobPilot uses **BullMQ + Redis** for asynchronous processing.
-
-Each major pipeline has its own queue/worker boundary.
+BullMQ + Redis are used for asynchronous processing.
 
 ```text
 Collector
    │
    ▼
-Matching Queue
-   │
-   ▼
-Matching Worker
-   │
-   ├──────────────► Clarification Queue
-   │                       │
-   │                       ▼
-   │                Clarification Worker
-   │
-   ▼
-Scheduler Queue
-   │
-   ▼
-Scheduler Worker
-   │
-   ▼
-Apply Queue
-   │
-   ▼
-Apply Worker
-   │
-   ▼
-Application
-   │
-   ▼
-Status Queue
-   │
-   ▼
-Status Worker
-   │
-   ▼
-Notification Queue
+Matching Queue ──► Matching Worker
+                       │
+                       ▼
+                 Matching Pipeline
+                    │        │
+                    │        └──► Clarification Queue
+                    │
+                    ▼
+               Scheduler Queue
+                    │
+                    ▼
+               Scheduler Worker
+                    │
+                    ▼
+                 Apply Queue
+                    │
+                    ▼
+                 Apply Worker
+                    │
+                    ▼
+              Application Data
+                    │
+                    ▼
+                Status Queue
+                    │
+                    ▼
+                Status Worker
+                    │
+                    ▼
+             Notification Queue
 ```
 
-Benefits:
+This architecture provides:
 
+- Workload isolation
+- Retry capability
+- Failure containment
+- Independent scaling
 - Non-blocking HTTP requests
-- Independent failure domains
-- Retryable asynchronous work
 - Controlled concurrency
-- Independent worker scaling
-- Better recovery after restarts
 
 ---
 
-# 7. Data Model
+# 8. Data Model Overview
 
 MongoDB is the durable source of truth for important business state.
 
-The major conceptual entities are:
+Conceptually:
 
 ```text
 User
@@ -923,15 +881,15 @@ User
 
 ### User
 
-Contains identity and automation configuration.
+Contains account and automation information such as status, resume/profile, preferences, limits, and counters.
 
 ### Source
 
-Represents an external job platform and its source-level configuration.
+Represents an external job provider and its configuration/limits.
 
 ### Job
 
-A normalized job independent of the original platform's response format.
+Represents a normalized job independent of the original platform format.
 
 ### Job Match
 
@@ -939,216 +897,233 @@ Represents the relationship between a user and a job after matching.
 
 ### Job Clarification
 
-Stores information for jobs that require clarification.
+Stores information for jobs requiring clarification.
 
 ### Application
 
 Represents an application attempt.
 
-Applications are separate from jobs because the same job can be relevant to multiple users.
+Applications are separate from jobs because the same job can potentially be considered by multiple users.
 
 ---
 
-# 8. Job Source Abstraction
+# 9. Job Source Abstraction
 
-One of the most important design decisions is the `JobSource` abstraction.
-
-Location:
-
-```text
-backend/modules/sources/
-```
-
-Important files:
-
-```text
-JobSource.js
-source.model.js
-source.controller.js
-source.validate.js
-source.registry.js
-sources/
-```
-
-The rest of the backend interacts with the abstract source rather than directly depending on a specific job platform.
-
-```text
-                    JobPilot
-                       │
-                 JobSource API
-                       │
-             ┌─────────┴─────────┐
-             ▼                   ▼
-         Source A             Source B
-             │                   │
-       Platform API        Platform API
-```
-
-A source implementation is responsible for understanding its own:
-
-- External API
-- Job format
-- Job normalization
-- Application mechanism
-- Status mechanism, when supported
-
-The rest of the system works with normalized data.
-
-This is why adding a new source should not require rewriting:
-
-- Matching
-- Scheduling
-- Job storage
-- Application orchestration
-- Status processing
-
----
-
-# 9. Adding a New Job Source
-
-The source system is designed so that a new platform can be added without creating platform-specific code throughout the application.
-
-## Step 1 — Create the source implementation
-
-Add the implementation under:
-
-```text
-backend/modules/sources/sources/
-```
-
-The implementation should follow the contract defined by:
+One of the most important design decisions is the `JobSource` abstraction:
 
 ```text
 backend/modules/sources/JobSource.js
 ```
 
-The exact methods depend on the current source contract, so use the existing source implementation as the template.
-
----
-
-## Step 2 — Normalize the job
-
-The new source converts its external job response into JobPilot's normalized job representation.
-
-The rest of the system should never need to know that, for example, one platform calls a field `job_title` while another calls it `positionName`.
-
----
-
-## Step 3 — Implement application behaviour
-
-The source implementation must expose the behaviour required by the generic apply pipeline.
-
-The apply module should not contain:
+A source understands its own external API/data format, while the rest of JobPilot expects normalized job/application behaviour.
 
 ```text
-if source == LinkedIn ...
-if source == Indeed ...
-if source == ...
+                 JobPilot
+                    │
+              JobSource contract
+             ┌──────┴──────┐
+             ▼             ▼
+         Source A       Source B
+             │             │
+       Platform API   Platform API
 ```
 
-Instead, the selected `JobSource` handles the platform-specific operation.
+Adding a new source should not require rewriting:
+
+- Matching
+- Scheduling
+- Application orchestration
+- Job storage
+- Status processing
+
+The standalone `job_source_1` service exists specifically to provide a predictable source implementation for development/testing.
 
 ---
 
-## Step 4 — Implement status behaviour
+# 10. Matching and Decision Flow
 
-If the source supports application-status checking, implement the required status operation for that source.
+Matching uses:
 
-The status worker can then use the same source abstraction.
-
----
-
-## Step 5 — Register the implementation
-
-The current main branch uses:
+- Job
+- User resume/profile
+- User preferences
+- Job requirements
+- AI matching
 
 ```text
-backend/modules/sources/source.registry.js
+Job
+ │
+ ├── User resume/profile
+ ├── User preferences
+ └── Job requirements
+          │
+          ▼
+      AI Matching
+          │
+     ┌────┼──────────────┐
+     ▼    ▼              ▼
+  Reject Match      Clarification
+                       Required
 ```
 
-The registry maps an implementation name to its class.
+The key distinction is:
+
+```text
+Match decision
+      ≠
+Application decision/time
+```
+
+A user can match many jobs while their scheduling limits allow only a smaller number of applications.
+
+---
+
+# 11. Scheduling and Rate Limiting
+
+Scheduling combines several independent constraints.
+
+### User daily limit
+
+A user can have a maximum number of applications per day.
+
+When that limit is reached, applications are moved toward the next valid reset period.
+
+### User application interval
+
+A minimum interval is maintained between applications for a user.
+
+### Source hourly limit
+
+A source can define a maximum number of applications per hour.
+
+Future source reservations are maintained in Redis so scheduled applications count against the source's capacity.
+
+### Combined decision
 
 Conceptually:
 
 ```text
-implementation name
-        │
-        ▼
-source.registry.js
-        │
-        ▼
-Source class
-        │
-        ▼
-JobSource instance
+finalTime =
+    max(
+        currentTime,
+        userNextAvailableTime,
+        sourceNextAvailableTime
+    )
 ```
 
-For example, the current registry maps the configured `JobSource1` implementation to the corresponding source class.
-
-When a MongoDB source record contains its implementation name, the registry can create the correct source object automatically.
-
-This is the important idea:
-
-> **The database stores which implementation a source uses; the registry resolves that name to the correct class.**
-
-So the collector, scheduler, apply pipeline, and status pipeline do not need to manually instantiate a different class for every source.
-
-### About `job.register.js`
-
-If a job-source package introduces a `job.register.js` file, it should be treated as a **source registration/bootstrap layer**: its job is to make the source implementation discoverable to the application rather than duplicating source-specific wiring throughout the system.
-
-The current `main` branch exposes the central backend registry as `source.registry.js`; that registry is the authoritative source-resolution mechanism in this repository. If `job.register.js` is added/used by a newer source implementation, it should feed into the same registration concept rather than becoming another place where the entire application pipeline is customized.
+This prevents scheduling from violating either user-level or source-level constraints.
 
 ---
 
-## Step 6 — Create/configure the source record
+# 12. Application Flow
 
-Create the corresponding source configuration/record with the implementation name and source settings.
-
-Typical source-level information includes:
-
-- Name
-- Base URL
-- Active/inactive state
-- Implementation name
-- Maximum applications per hour
-- Polling interval
-
-Once the source is registered and configured, the normal pipeline can consume it.
-
----
-
-## Step 7 — Test the source
-
-Use the existing source tests as the model.
-
-At minimum verify:
+Once the scheduler selects a time:
 
 ```text
-Source creation
-Job fetching
-Job normalization
-Application submission
-Status behaviour (if supported)
+Scheduled Apply Job
+       │
+       ▼
+Apply Queue
+       │
+       ▼
+Apply Worker
+       │
+       ▼
+Apply Pipeline
+       │
+       ├── Load user
+       ├── Load job
+       ├── Load source
+       ├── Prepare application data
+       ├── Generate/use resume
+       ├── Generate/use cover letter
+       ├── Submit to source
+       └── Persist application result
 ```
 
-The goal is:
-
-```text
-New Source
-    │
-    ├── Collector works
-    ├── Matching works
-    ├── Scheduler works
-    ├── Apply works
-    └── Status works
-```
-
-without modifying those modules for every new platform.
+The actual source-specific submission is delegated to the source implementation.
 
 ---
 
-# 10. Environment Configuration
+# 13. Resume and AI Services
+
+The Python service is the specialized AI/document-processing layer.
+
+Current endpoints include:
+
+```text
+GET  /
+POST /parse
+POST /summarize-resume
+POST /match-job
+POST /clarify-job
+POST /create-resume
+POST /create-cover-letter
+```
+
+### PDF parsing
+
+`/parse` processes an uploaded resume PDF.
+
+### Resume summarization
+
+`/summarize-resume` produces structured resume information.
+
+### Job matching
+
+`/match-job` receives user/job information and returns structured matching information.
+
+### Job clarification
+
+`/clarify-job` generates clarification information using user data, preferences, job data, and matching information.
+
+### Resume generation
+
+`/create-resume` generates job-specific resume material.
+
+### Cover-letter generation
+
+`/create-cover-letter` generates a cover letter using user, resume, and job information.
+
+The Node.js backend remains responsible for orchestration; the Python service specializes in AI/document operations.
+
+---
+
+# 14. Frontend ↔ Backend Communication
+
+The frontend does **not** need to communicate directly with every worker.
+
+The communication model is:
+
+```text
+Frontend
+   │
+   │ HTTP
+   ▼
+Node API
+   │
+   ├── Immediate API work
+   │
+   └── Long-running work
+          │
+          ▼
+       BullMQ
+          │
+          ▼
+        Worker
+          │
+          ▼
+       MongoDB
+          │
+          ▼
+Frontend reads updated state
+```
+
+This means the frontend remains a normal web client while the backend handles asynchronous processing internally.
+
+---
+
+# 15. Environment Configuration
 
 Backend configuration is centralized through:
 
@@ -1156,22 +1131,23 @@ Backend configuration is centralized through:
 backend/config/env.js
 ```
 
-Configuration includes values for:
+Configuration covers areas such as:
 
 - MongoDB
 - Redis
-- JWT/authentication
-- Python/AI service URL
-- Queue behaviour
-- Application limits/intervals
-- Recovery window
-- Other runtime settings
+- Authentication
+- External service URLs
+- Python/AI service
+- Queue/application configuration
+- Application intervals
+- Recovery interval
+- Runtime limits
 
-Do not commit secrets.
+Sensitive values should never be committed.
 
-The exact environment variable names in `backend/config/env.js` should be treated as authoritative because they may evolve with the implementation.
+Use the current `backend/config/env.js` as the authoritative list of supported environment variables.
 
-One important scheduling setting is the default application interval:
+An important scheduling setting is:
 
 ```text
 DEFAULT_APPLICATION_INTERVAL_MINUTES
@@ -1193,17 +1169,15 @@ to:
 frontend/.env.local
 ```
 
-The current example uses:
+The frontend API URL should point to the Node backend, for example:
 
 ```text
 NEXT_PUBLIC_API_URL=http://localhost:5000
 ```
 
-Change it if the backend runs elsewhere.
-
 ---
 
-# 11. Running the System Locally
+# 16. Running the System
 
 ## Prerequisites
 
@@ -1211,15 +1185,16 @@ Install/configure:
 
 - Node.js
 - npm
-- Python 3.x
 - MongoDB
 - Redis
-- A configured LLM/AI provider
-- Access to a real job source, or use `job_source_1` for local testing
+- Python 3.x
+- Python dependencies
+- Configured LLM/AI provider
+- A real job source, or use `job_source_1`
 
 ---
 
-## 11.1 Start the Frontend
+## 16.1 Start Frontend
 
 ```bash
 cd frontend
@@ -1227,7 +1202,7 @@ npm install
 npm run dev
 ```
 
-The Next.js development server normally runs at:
+The frontend development server normally runs on:
 
 ```text
 http://localhost:3000
@@ -1235,7 +1210,7 @@ http://localhost:3000
 
 ---
 
-## 11.2 Start the Node Backend
+## 16.2 Start Node Backend
 
 ```bash
 cd backend
@@ -1243,13 +1218,11 @@ npm install
 npx nodemon server.js
 ```
 
-The frontend example configuration expects:
+Or, using the repository's normal Node entry point:
 
-```text
-http://localhost:5000
+```bash
+node server.js
 ```
-
-for the backend API.
 
 The backend must be able to reach:
 
@@ -1260,22 +1233,18 @@ The backend must be able to reach:
 
 ---
 
-## 11.3 Start the Python AI Server
-
-Create/activate the Python environment and install the project's Python dependencies.
-
-Then:
+## 16.3 Start Python AI Service
 
 ```bash
 cd python_server
 uvicorn server:app --reload
 ```
 
-If the project is configured to use a specific port/host, use those values in the backend configuration.
+The Python service provides the AI/document endpoints described above.
 
 ---
 
-## 11.4 Start the Mock Job Source
+## 16.4 Start Mock Job Source
 
 ```bash
 cd job_source_1
@@ -1283,9 +1252,7 @@ npm install
 npm run dev
 ```
 
-The mock source uses `nodemon` through its package script.
-
-It stores test state in:
+The mock source maintains:
 
 ```text
 jobs.json
@@ -1293,11 +1260,18 @@ applications.json
 logs.txt
 ```
 
+It can be used for:
+
+- Job fetching
+- Application submission
+- Application state
+- Request logging
+
 ---
 
-# 12. Start All Backend Workers
+# 17. Starting the Workers
 
-Workers are intentionally separate Node processes.
+The workers are independent Node processes.
 
 Open separate terminals from the `backend` directory.
 
@@ -1336,7 +1310,7 @@ cd backend
 npx nodemon modules/apply/start.js
 ```
 
-### Check Status
+### Status Checking
 
 ```bash
 cd backend
@@ -1352,39 +1326,41 @@ npx nodemon modules/notification/start.js
 
 ### Old Job Recovery
 
-The recovery module currently exposes its worker directly:
+The current recovery module exposes:
 
 ```bash
 cd backend
 npx nodemon modules/oldJobRecovery/oldJobRecovery.worker.js
 ```
 
-> If a module's entry point changes later, use the `start.js`/worker entry point currently present in that module as the authoritative command.
+For a development setup, these can be separate terminals. In deployment, they can be managed by containers/process managers/orchestration.
 
 ---
 
-# 13. Recommended Development Startup
+# 18. Recommended Local Runtime
 
-For a complete local environment, run these processes:
+A complete local environment consists of:
 
 ```text
-1. Frontend
-2. Node API server
-3. Python AI server
-4. Job source server
-5. Collector
-6. Matching worker
-7. Clarification worker
-8. Scheduler worker
-9. Apply worker
-10. Status worker
-11. Notification worker
-12. Old-job recovery worker
-13. MongoDB
-14. Redis
+MongoDB
+Redis
+
+Frontend
+Node API
+Python AI Service
+Job Source
+
+Collector
+Matching Worker
+Clarification Worker
+Scheduler Worker
+Apply Worker
+Status Worker
+Notification Worker
+Recovery Worker
 ```
 
-A practical terminal layout is:
+A practical development terminal layout:
 
 ```text
 Terminal 1   frontend
@@ -1402,15 +1378,11 @@ Terminal 11  notification
 Terminal 12  recovery
 ```
 
-For production, these processes do not need to remain separate terminal sessions. They can be managed using containers, a process manager, or an orchestration platform.
-
 ---
 
-# 14. Testing
+# 19. Testing
 
-The repository contains tests around important domain boundaries.
-
-Examples:
+Important pipeline/source tests include:
 
 ```text
 backend/modules/apply/test_apply_pipeline.js
@@ -1420,23 +1392,23 @@ backend/modules/sources/test_job_source_class.js
 job_source_1/server.test.js
 ```
 
-Useful test categories are:
+The project can be tested at multiple levels.
 
 ### Unit tests
 
-Test individual business rules.
+Validate individual business rules.
 
 ### Pipeline tests
 
-Test the sequence of operations within a module.
+Validate a complete module pipeline.
 
 ### Source tests
 
-Verify that a source follows the `JobSource` contract.
+Validate that a source follows the `JobSource` contract.
 
 ### Integration tests
 
-Verify interactions between:
+Validate interactions among:
 
 ```text
 MongoDB
@@ -1444,48 +1416,163 @@ Redis
 Queues
 Workers
 Python service
-Job source
+Job sources
 ```
-
-Because the architecture isolates business pipelines, many tests can run without starting the entire platform.
 
 ---
 
-# 15. Reliability and Recovery
-
-JobPilot is designed around the assumption that individual processes can fail or restart.
+# 20. Reliability and Recovery
 
 ### Queue isolation
 
-Each major asynchronous stage has its own queue/worker boundary.
+Major asynchronous stages have separate queues/workers.
 
-A matching failure does not require the API server to stop.
+A failure in one stage does not require the whole backend to stop.
 
-### Durable state
+### Persistent state
 
 Important business state is stored in MongoDB rather than only in process memory.
-
-Workers can reconstruct state after a restart.
 
 ### Redis coordination
 
 Redis provides queue infrastructure and shared scheduling state.
 
-This is especially important when multiple scheduler workers are running.
+### Old-job recovery
+
+Jobs missed while a user was inactive can later be reconsidered.
 
 ### Application state
 
-Applications are stored separately from jobs so their status can change after submission.
-
-### Old-job recovery
-
-Jobs missed because a user was inactive can be reconsidered later.
+Applications are separate from jobs, allowing status to change after submission.
 
 ---
 
-# 16. Important Design Boundaries
+# 21. Adding a New Job Source
 
-These boundaries are useful when modifying the system.
+This is one of the most important extension workflows in JobPilot.
+
+## Step 1 — Create the source implementation
+
+Add the new implementation under:
+
+```text
+backend/modules/sources/sources/
+```
+
+It should conform to the `JobSource` contract defined by:
+
+```text
+backend/modules/sources/JobSource.js
+```
+
+---
+
+## Step 2 — Normalize jobs
+
+Every external source can have a different response format.
+
+Convert that platform-specific response into JobPilot's normalized job representation.
+
+The collector and downstream modules should not care about the source's original field names.
+
+---
+
+## Step 3 — Implement application behaviour
+
+The source implementation should provide the behaviour required by the generic apply pipeline to submit an application.
+
+Do not add source-specific conditions throughout the apply worker.
+
+Avoid designs such as:
+
+```text
+if source == A
+if source == B
+if source == C
+```
+
+The source abstraction should handle platform-specific behaviour.
+
+---
+
+## Step 4 — Implement status behaviour
+
+If the platform supports application status checking, implement the required source behaviour for the status pipeline.
+
+---
+
+## Step 5 — Register/configure the source
+
+The source needs to be registered/configured so the backend can resolve the configured implementation.
+
+The current repository's backend uses the source abstraction and source registry mechanism under:
+
+```text
+backend/modules/sources/
+```
+
+The important concept is:
+
+```text
+Source configuration
+        │
+        ▼
+Implementation name
+        │
+        ▼
+Source registry / resolver
+        │
+        ▼
+Concrete JobSource implementation
+```
+
+This is why a new source should not require manually changing the collector, matching, scheduler, apply, and status modules.
+
+### About `job.register.js`
+
+If a source package contains a `job.register.js`, its role should be source registration/bootstrap: making the new source implementation discoverable.
+
+The important architectural rule is that registration should ultimately feed the common source-resolution mechanism. It should not become a place where platform-specific logic is duplicated across the whole application.
+
+The current backend README/source structure establishes `JobSource.js` and the source implementation directory as the source abstraction boundary. Use the current source registry/registration code in the repository as the authoritative implementation when adding a source.
+
+---
+
+## Step 6 — Configure the source
+
+Create/configure the corresponding source record with its relevant settings, such as:
+
+- Source identity/name
+- Active/inactive state
+- Implementation
+- External URL/configuration
+- Application limits
+
+---
+
+## Step 7 — Test it
+
+Use the existing source tests and `job_source_1` as examples.
+
+The desired result is:
+
+```text
+New Source
+    │
+    ├── Collector works
+    ├── Matching works
+    ├── Scheduler works
+    ├── Apply works
+    └── Status works
+```
+
+without adding source-specific logic to those generic modules.
+
+---
+
+# 22. Important Design Boundaries
+
+When extending JobPilot, preserve these boundaries.
 
 ### Collector vs Matching
 
@@ -1501,11 +1588,11 @@ Matching  = "Should this job proceed?"
 Scheduler = "When can it be applied?"
 ```
 
-### Scheduling vs Apply
+### Scheduler vs Apply
 
 ```text
 Scheduler = "When?"
-Apply     = "How?"
+Apply     = "Perform it now."
 ```
 
 ### Apply vs Status
@@ -1518,248 +1605,259 @@ Status = "What is the current state after submission?"
 ### Node vs Python
 
 ```text
-Node.js  = orchestration + business workflow
-Python   = AI/document processing
+Node.js = orchestration + business workflow
+Python  = AI + document processing
 ```
 
 ### MongoDB vs Redis
 
 ```text
 MongoDB = durable business state
-Redis   = queues + fast coordination/scheduling state
+Redis   = queues + shared scheduling coordination
 ```
-
-Keeping these boundaries intact makes the project easier to extend.
 
 ---
 
-# 17. Adding More AI Providers
-
-AI-specific work is separated behind the Python service and Node-side LLM boundary.
-
-This allows the model/provider implementation to change without forcing the matching, scheduling, application, or frontend modules to understand provider-specific details.
-
-Possible future providers/models can therefore be introduced behind the existing AI interfaces.
-
----
-
-# 18. Scaling
-
-The architecture is designed for independent scaling.
-
-For example, if matching becomes the bottleneck:
-
-```text
-Do not necessarily scale API servers.
-
-Scale:
-Matching Workers
-```
-
-Similarly:
-
-```text
-Application bottleneck
-        ↓
-Scale Apply Workers
-```
-
-The same idea applies to:
-
-- Collector workers
-- Scheduler workers
-- Status workers
-- Notification workers
-
-MongoDB remains the durable shared state layer and Redis provides shared queue/scheduling coordination.
-
----
-
-# 19. Common Failure Scenarios
+# 23. Failure Scenarios
 
 ### User becomes inactive
 
-The scheduler prevents new applications from being scheduled.
+The scheduler checks user state and does not schedule new applications for an inactive user.
 
-Previously collected jobs can later be considered by recovery.
+Previously collected jobs can later be considered by old-job recovery.
 
 ### Source becomes inactive
 
-The scheduler should not schedule new applications for that source.
+The scheduler checks source state and does not schedule new applications against an inactive source.
 
 ### Matching worker fails
 
-The matching workload remains isolated in its queue and can be retried/reprocessed according to queue configuration.
+Matching work remains isolated in asynchronous processing and can be retried/reprocessed according to queue configuration.
 
 ### Apply worker fails
 
-Application execution is isolated from collection and matching, allowing controlled retries.
+Application execution is isolated from collection and matching.
 
 ### Notification fails
 
-Notification delivery should not become the source of truth for application state.
+Notification delivery is separated from core application state.
 
 ### Backend restarts
 
-MongoDB preserves business state and Redis preserves queue/scheduling coordination.
+MongoDB retains durable business state and Redis retains queue/scheduling coordination.
 
 ### User pauses automation
 
-New scheduling stops, while historical recovery can later find jobs collected during the paused period.
+New scheduling is blocked by user state, while historical recovery can later identify jobs collected during the paused period.
 
 ---
 
-# 20. Frontend/Backend Communication
+# 24. Scaling Considerations
 
-The frontend is a normal web client and communicates with the Node backend through HTTP APIs.
+The architecture is designed for independent scaling.
 
-The important distinction is:
+If matching becomes a bottleneck:
 
 ```text
-Frontend
-   │
-   │ HTTP
-   ▼
-Node API
-   │
-   ├── Immediate request/response work
-   │
-   └── Long-running work
-          │
-          ▼
-       BullMQ
-          │
-          ▼
-        Workers
+Scale matching workers
 ```
 
-The frontend therefore does not need to communicate directly with every worker.
+rather than necessarily scaling the API server.
 
-For example, starting an automation-related operation can result in:
+Likewise:
 
 ```text
-Frontend
-   │
-   ▼
-Node API
-   │
-   ▼
-Queue
-   │
-   ▼
-Worker
-   │
-   ▼
-MongoDB
-   │
-   ▼
-Frontend reads updated state
+Application bottleneck → Scale apply workers
+Status bottleneck       → Scale status workers
+Collection bottleneck   → Scale collector workers
 ```
 
-This is the main reason the worker architecture does not make frontend/backend communication impossible: the frontend talks to the API, while the API and workers communicate through shared durable state and queues.
+The shared MongoDB/Redis infrastructure allows multiple worker processes to coordinate.
 
----
-
-# 21. Development Philosophy
-
-The project follows a few important principles:
-
-1. **Keep routes thin.**
-2. **Keep platform-specific code inside JobSource implementations.**
-3. **Do not put matching logic inside the collector.**
-4. **Do not put scheduling policy inside the apply module.**
-5. **Do not put platform-specific submission logic inside the generic apply pipeline.**
-6. **Keep AI/document processing behind the Python service.**
-7. **Use queues for long-running asynchronous work.**
-8. **Keep durable business state in MongoDB.**
-9. **Use Redis for queues and shared scheduling coordination.**
-10. **Make recovery a first-class part of the system.**
-
----
-
-# 22. Quick Reference
-
-| Component | Technology | Responsibility |
-|---|---|---|
-| Frontend | Next.js / React | User interface |
-| API | Node.js / Express | HTTP API and orchestration |
-| Database | MongoDB / Mongoose | Durable application state |
-| Queue | BullMQ / Redis | Async processing |
-| AI Service | FastAPI / Python | AI and document processing |
-| Job Sources | Source adapters | Platform-specific job/application logic |
-| Collector | Node worker | Job ingestion |
-| Matching | Node worker | Job suitability |
-| Clarification | Node worker | Uncertain cases |
-| Scheduler | Node worker | Application timing/limits |
-| Apply | Node worker | Application execution |
-| Status | Node worker | Application monitoring |
-| Notification | Node worker | Event delivery |
-| Recovery | Node worker | Reprocess missed jobs |
-
----
-
-# 23. Minimal Startup Checklist
-
-Before debugging application logic, make sure the following are running:
+For larger deployments, the individual processes can be managed as separate services:
 
 ```text
-[ ] MongoDB
-[ ] Redis
-[ ] Python AI service
-[ ] Node API
-[ ] Job source
-[ ] Collector
-[ ] Matching worker
-[ ] Clarification worker
-[ ] Scheduler worker
-[ ] Apply worker
-[ ] Status worker
-[ ] Notification worker
-[ ] Recovery worker
-[ ] Frontend
+API
+Collector Workers
+Matching Workers
+Clarification Workers
+Scheduler Workers
+Apply Workers
+Status Workers
+Notification Workers
+Recovery Worker
+Python AI Service
 ```
 
-If the UI loads but jobs are not moving through the system, check the workers and Redis first.
-
-If jobs are collected but not matched, check the matching worker and Python AI service.
-
-If jobs match but applications do not appear, check the scheduler and apply workers.
-
-If applications exist but their status does not change, check the status worker and source status implementation.
-
 ---
 
-## Summary
+# 25. Common Debugging Order
 
-JobPilot is best understood not as a single backend server, but as a set of cooperating pipelines.
+When something is not moving through the pipeline, check the stages in order.
 
-The core flow is:
+### Jobs are not appearing
+
+Check:
 
 ```text
-Job Source
-    ↓
+Job source
+   ↓
 Collector
-    ↓
-Normalized Job
-    ↓
-Matching
-    ├── Reject
-    ├── Clarification
-    └── Match
-            ↓
-        Scheduler
-            ↓
-        Apply Queue
-            ↓
-        Apply Worker
-            ↓
-        Application
-            ↓
-        Status Checking
-            ↓
-        Notifications
+   ↓
+MongoDB
 ```
 
-MongoDB provides durable state, Redis/BullMQ provides asynchronous coordination, Python handles AI/document operations, Node.js owns business orchestration, and the Next.js frontend provides the user-facing control layer.
+### Jobs exist but are not matched
 
-The most important extensibility point is the **JobSource abstraction**: adding a new job platform should primarily require implementing and registering that source, while the collector, matching, scheduler, apply, and status pipelines remain generic.
+Check:
+
+```text
+Matching queue
+Matching worker
+Python AI service
+```
+
+### Jobs match but are not scheduled
+
+Check:
+
+```text
+Scheduler worker
+User status
+User limits
+Source status
+Redis scheduling state
+```
+
+### Applications are scheduled but not submitted
+
+Check:
+
+```text
+Apply queue
+Apply worker
+JobSource implementation
+```
+
+### Applications exist but status does not update
+
+Check:
+
+```text
+Status producer
+Status queue
+Status worker
+Source status implementation
+```
+
+### Events are processed but the user is not notified
+
+Check:
+
+```text
+Notification queue
+Notification worker
+Notification configuration
+```
+
+---
+
+# 26. Architecture Summary
+
+JobPilot is best understood as a collection of cooperating pipelines rather than one large backend.
+
+```text
+                          ┌─────────────────────┐
+                          │    Job Sources      │
+                          └──────────┬──────────┘
+                                     │
+                                     ▼
+                          ┌─────────────────────┐
+                          │     Collector       │
+                          └──────────┬──────────┘
+                                     │
+                                     ▼
+                          ┌─────────────────────┐
+                          │      MongoDB        │
+                          │ Jobs / Users / Apps │
+                          └──────────┬──────────┘
+                                     │
+                                     ▼
+                          ┌─────────────────────┐
+                          │ Matching Queue      │
+                          └──────────┬──────────┘
+                                     │
+                                     ▼
+                          ┌─────────────────────┐
+                          │ Matching Worker     │
+                          └──────────┬──────────┘
+                                     │
+                    ┌────────────────┼────────────────┐
+                    │                │                │
+                    ▼                ▼                ▼
+                 Reject            Match        Clarification
+                                      │                │
+                                      │                ▼
+                                      │       Clarification Queue
+                                      │
+                                      ▼
+                          ┌─────────────────────┐
+                          │ Scheduler Queue     │
+                          └──────────┬──────────┘
+                                     │
+                                     ▼
+                          ┌─────────────────────┐
+                          │ Scheduler Worker    │
+                          │                     │
+                          │ User limits         │
+                          │ Source limits       │
+                          │ Application interval│
+                          │ Redis reservations  │
+                          └──────────┬──────────┘
+                                     │
+                                     ▼
+                          ┌─────────────────────┐
+                          │ Apply Queue         │
+                          └──────────┬──────────┘
+                                     │
+                                     ▼
+                          ┌─────────────────────┐
+                          │ Apply Worker        │
+                          └──────────┬──────────┘
+                                     │
+                                     ▼
+                          ┌─────────────────────┐
+                          │ Application Record  │
+                          └──────────┬──────────┘
+                                     │
+                                     ▼
+                          ┌─────────────────────┐
+                          │ Status Queue/Worker │
+                          └──────────┬──────────┘
+                                     │
+                                     ▼
+                          ┌─────────────────────┐
+                          │ Notification Queue  │
+                          └─────────────────────┘
+
+
+                 ┌─────────────────────────────────────┐
+                 │          Python AI Service          │
+                 │                                     │
+                 │ PDF Parsing                         │
+                 │ Resume Summarization                │
+                 │ Job Matching                        │
+                 │ Job Clarification                   │
+                 │ Resume Generation                   │
+                 │ Cover Letter Generation             │
+                 └─────────────────────────────────────┘
+```
+
+The four core principles are:
+
+1. **Separate business responsibilities into modules.**
+2. **Move long-running work into queues and workers.**
+3. **Hide external job platforms behind a common source abstraction.**
+4. **Keep AI/document processing separate from the main Node.js orchestration layer.**
+
+Together, these choices make JobPilot easier to understand, test, extend, recover, and scale.
