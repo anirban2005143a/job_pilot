@@ -4,7 +4,8 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit"
 import { authRoutes } from "./routes/auth.routes.js";
 import { userRoutes } from "./routes/user.routes.js";
-import { sourceRoutes } from "./routes/source.route.js";
+import { sourceRoutes } from "./routes/source.routes.js";
+import { dashboardRoutes } from "./routes/dashboard.routes.js";
 
 export const app = express();
 
@@ -30,6 +31,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/source", sourceRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 // Health check
 app.get("/", (req, res) => {

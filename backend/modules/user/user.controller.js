@@ -71,9 +71,6 @@ export const uploadResumeController = async (req, res) => {
         `;
 
         resumeSummary = await llmModule.getSummary(content);
-
-        // Optional: wait 1 second between LLM calls
-        await new Promise((resolve) => setTimeout(resolve, 1000));
       }
     }
 
@@ -121,14 +118,12 @@ export const upsertPreferenceController = async (req, res) => {
         new: true,
         runValidators: true,
       },
-    )
+    );
 
     return res.status(200).json({
       success: true,
       message: "Preferences updated successfully",
-      data: {
-        preferences: user.preferences,
-      },
+      preferences: user.preferences,
     });
   } catch (error) {
     console.error("addPreferenceController error:", error);
@@ -199,9 +194,7 @@ export const updateStatusController = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Status updated successfully",
-      data: {
-        status: user.status,
-      },
+      status: user.status,
     });
   } catch (error) {
     console.error("updateStatusController error:", error);
@@ -244,7 +237,7 @@ export const jobDecisionController = async (req, res) => {
         message: "Job match not found for this user",
       });
     }
-    
+
     if (jobMatch.result !== "needs_clarification") {
       return res.status(400).json({
         success: false,
