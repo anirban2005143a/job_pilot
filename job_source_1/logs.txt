@@ -521,3 +521,10 @@
 [2026-08-19T17:12:23.779Z] [INFO] [STATUS_FETCHED] Fetched application status: accepted | user_id=6a85d490edef830a2a4cc09b job_id=job-111 status=accepted
 [2026-08-19T17:12:23.848Z] [INFO] [STATUS_FETCHED] Fetched application status: accepted | user_id=6a85d490edef830a2a4cc09b job_id=job-111 status=accepted
 [2026-08-19T17:12:23.876Z] [INFO] [STATUS_FETCHED] Fetched application status: rejected | user_id=6a85d490edef830a2a4cc09b job_id=job-clarification-003 status=rejected
+[2026-08-20T11:07:25.244Z] [INFO] [JOBS_FETCHED] Fetched 3 random jobs
+[2026-08-20T11:10:40.765Z] [INFO] [APPLICATION_SUBMITTED] Application submitted | application_id=ecd6db00-d238-4222-8211-ab1735de6eed job_id=job-clarification-003 user_id=6a86dcd68419d845b37e445c stored_status=pending
+[2026-08-20T11:11:05.533Z] [INFO] [STATUS_FETCHED] Fetched application status: pending | user_id=6a86dcd68419d845b37e445c job_id=job-clarification-003 status=pending
+[2026-08-20T11:11:35.527Z] [INFO] [STATUS_FETCHED] Fetched application status: pending | user_id=6a86dcd68419d845b37e445c job_id=job-clarification-003 status=pending
+[2026-08-20T11:12:05.530Z] [INFO] [STATUS_FETCHED] Fetched application status: pending | user_id=6a86dcd68419d845b37e445c job_id=job-clarification-003 status=pending
+[2026-08-20T11:12:35.550Z] [INFO] [STATUS_FETCHED] Fetched application status: pending | user_id=6a86dcd68419d845b37e445c job_id=job-clarification-003 status=pending
+[2026-08-20T11:13:05.539Z] [INFO] [STATUS_FETCHED] Fetched application status: pending | user_id=6a86dcd68419d845b37e445c job_id=job-clarification-003 status=pending

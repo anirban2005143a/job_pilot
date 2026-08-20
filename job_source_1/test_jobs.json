@@ -67,28 +67,76 @@
     "description": "Build and deploy deep learning models for large-scale machine learning systems. The role requires strong experience with production ML infrastructure and cloud deployment."
   },
   {
-  "id": "job-reject-003",
-  "title": "Senior Embedded Systems Engineer",
-  "company": "AutoCore Technologies",
-  "cities": ["Pune", "Bengaluru"],
-  "countries": ["India"],
-  "is_remote": false,
-  "is_hybride": false,
-  "is_onsite": true,
-  "salary_offered": "₹25,00,000 - ₹40,00,000 per year",
-  "visa_sponsorship_offered": false,
-  "start_date": "2026-10-01",
-  "required_skills": [
-    "C",
-    "Embedded C",
-    "C++",
-    "ARM Cortex-M",
-    "RTOS",
-    "CAN Bus",
-    "AUTOSAR",
-    "Microcontrollers",
-    "PCB Debugging"
-  ],
-  "description": "Design and develop safety-critical embedded software for automotive electronic control units. The role requires extensive hands-on experience with microcontrollers, ARM Cortex-M architecture, RTOS, CAN communication, AUTOSAR, and embedded hardware debugging."
-}
+    "id": "job-reject-003",
+    "title": "Senior Embedded Systems Engineer",
+    "company": "AutoCore Technologies",
+    "cities": ["Pune", "Bengaluru"],
+    "countries": ["India"],
+    "is_remote": false,
+    "is_hybride": false,
+    "is_onsite": true,
+    "salary_offered": "₹25,00,000 - ₹40,00,000 per year",
+    "visa_sponsorship_offered": false,
+    "start_date": "2026-10-01",
+    "required_skills": [
+      "C",
+      "Embedded C",
+      "C++",
+      "ARM Cortex-M",
+      "RTOS",
+      "CAN Bus",
+      "AUTOSAR",
+      "Microcontrollers",
+      "PCB Debugging"
+    ],
+    "description": "Design and develop safety-critical embedded software for automotive electronic control units. The role requires extensive hands-on experience with microcontrollers, ARM Cortex-M architecture, RTOS, CAN communication, AUTOSAR, and embedded hardware debugging."
+  },
+
+  {
+    "id": "job-111",
+    "title": "DevOps Engineer",
+    "company": "CloudOps",
+    "cities": ["Hyderabad"],
+    "countries": ["India"],
+    "is_remote": false,
+    "is_hybride": false,
+    "is_onsite": true,
+    "salary_offered": "₹31,00,000 - ₹42,00,000 per year",
+    "visa_sponsorship_offered": false,
+    "start_date": "2026-10-01",
+    "required_skills": ["Terraform", "AWS", "Kubernetes", "Ansible", "Linux"],
+    "description": "Own cloud infrastructure and deployment pipelines for a large enterprise platform from the Hyderabad office."
+  },
+
+  {
+    "id": "job-112",
+    "title": "Backend Engineer",
+    "company": "LaunchAI",
+    "cities": ["Bangalore"],
+    "countries": ["India"],
+    "is_remote": true,
+    "is_hybride": true,
+    "is_onsite": false,
+    "salary_offered": "₹35,00,000 - ₹50,00,000 per year",
+    "visa_sponsorship_offered": false,
+    "start_date": "2026-10-01",
+    "required_skills": ["Python", "FastAPI", "PostgreSQL", "LLMs"],
+    "description": "Be one of the first engineers at an early-stage AI startup and build the backend platform from scratch."
+  },
+
+  {
+    "id": "job-113",
+    "title": "Software Engineer - AI Platform",
+    "company": "ModelWorks",
+    "cities": ["Bangalore", "Hyderabad"],
+    "countries": ["India"],
+    "is_remote": true,
+    "is_hybride": true,
+    "is_onsite": false,
+    "salary_offered": "₹32,00,000 - ₹45,00,000 per year",
+    "visa_sponsorship_offered": false,
+    "start_date": "2026-09-15",
+    "required_skills": ["Python", "LLMs", "FastAPI", "Docker", "Kubernetes"],
+    "description": "Build backend services for an AI platform as part of a product engineering team."
+  }
 ]
